@@ -8,5 +8,6 @@ Sample renders of the quiz video backgrounds: 1920×1080, 30 fps, exactly 21 s, 
 | QB12 | Bokeh Sparkle | still on client Canva gradient (#00bbf6→#000990) |
 | QB13 | Doodle Play | green ↑, purple ↓, orange →, blue ←, pink ↗ (scroll directions) + still |
 | QB14 | Quiz Doodles | green ↑, purple ↗, orange ↘, blue ↙, pink ↖ + still |
+| QB03 | Spotlight Stage | blue (draft, faster motion) + still |
 
 Rendered with `render/render.py` on the `main` branch.
