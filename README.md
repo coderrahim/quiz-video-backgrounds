@@ -1,0 +1,11 @@
+Sample renders of the quiz video backgrounds: 1920×1080, 30 fps, exactly 21 s, seamless loops. No text, no logos.
+
+| Code | Design | Files |
+|---|---|---|
+| QB02 | Hex Pulse | blue, green |
+| QB08 | Radar Rings | blue, green |
+| QB11 | Geo Tiles | green, purple, orange, blue, pink, blue-ref (client gradient) + still on #00bbf6→#000890 |
+| QB12 | Bokeh Sparkle | still on client Canva gradient (#00bbf6→#000990) |
+| QB13 | Doodle Play | green ↑, purple ↓, orange →, blue ←, pink ↗ (scroll directions) + still |
+
+Rendered with `render/render.py` on the `main` branch.
