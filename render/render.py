@@ -337,6 +337,7 @@ def quiz_doodles(t, P):
     return img + (tint - img) * pat * 0.21
 
 # ---------------- Design 03: Spotlight Stage (TV game-show) ----------------
+STAGE_RAYS, STAGE_SWAY_DEG, STAGE_SWAY_CYC, STAGE_RIM = 3, 8, 3, 3   # motion speed (integer cycles per 21 s loop)
 _STAGE_BOKEH = None
 def _stage_bokeh():
     global _STAGE_BOKEH
@@ -345,11 +346,11 @@ def _stage_bokeh():
         for i in range(34):            # row of lights along the stage rim
             x = (i + 0.5) / 34 * W + g.uniform(-15, 15)
             y = H - 175 - 70 * (1 - ((x - CX) / CX) ** 2) * 0 + g.uniform(-30, 30) - 40 * np.cos((x - CX) / CX * 1.4)
-            out.append((x, y, g.uniform(10, 26), g.uniform(0.35, 0.8), g.uniform(0, 1), int(g.integers(1, 4))))
+            out.append((x, y, g.uniform(10, 26), g.uniform(0.35, 0.8), g.uniform(0, 1), int(g.integers(1, 5))))
         for corner in [(0, 0), (W, 0)]:  # clusters in the top corners
             for _ in range(10):
                 x = corner[0] + (1 if corner[0] == 0 else -1) * g.uniform(20, 420); y = g.uniform(15, 260)
-                out.append((x, y, g.uniform(8, 30), g.uniform(0.25, 0.6), g.uniform(0, 1), int(g.integers(1, 4))))
+                out.append((x, y, g.uniform(8, 30), g.uniform(0.25, 0.6), g.uniform(0, 1), int(g.integers(1, 5))))
         _STAGE_BOKEH = out
     return _STAGE_BOKEH
 
@@ -360,7 +361,7 @@ def spotlight_stage(t, P):
     # sunburst rays from just below centre; rotate exactly one ray period per loop (seamless, very slow)
     ox, oy = CX, CY + 60
     th = np.arctan2(Y - oy, X - ox); N = 20
-    ray = smooth(0.15, 0.55, 0.5 + 0.5 * np.cos(N * th - TAU * ph))
+    ray = smooth(0.15, 0.55, 0.5 + 0.5 * np.cos(N * th - TAU * STAGE_RAYS * ph))
     rn = np.hypot((X - ox) / (W / 2), (Y - oy) / (H / 2))
     ray *= smooth(0.38, 0.95, rn)                     # keep centre clean
     img = img + (light - img) * (ray * 0.07)[..., None]
@@ -368,7 +369,7 @@ def spotlight_stage(t, P):
     for sx, base in [(-60, 52), (W + 60, 128)]:
         sy = -80
         ang = np.degrees(np.arctan2(Y - sy, X - sx))
-        a0 = base + 3 * np.sin(TAU * ph + (0 if sx < 0 else np.pi))
+        a0 = base + STAGE_SWAY_DEG * np.sin(TAU * STAGE_SWAY_CYC * ph + (0 if sx < 0 else np.pi))
         cone = np.exp(-((ang - a0) / 9.0) ** 2) * smooth(1700, 300, np.hypot(X - sx, Y - sy))
         cone *= 1 - 0.75 * np.exp(-(((X - CX) / (W * 0.24)) ** 2 + ((Y - CY) / (H * 0.26)) ** 2))
         img = img + (light - img) * (cone * 0.22)[..., None]
@@ -377,7 +378,7 @@ def spotlight_stage(t, P):
     floor = smooth(1.0, 0.985, e)
     img = img * (1 - 0.35 * floor[..., None])
     rim = np.exp(-((e - 1.0) / 0.0035) ** 2); rim2 = np.exp(-((e - 0.965) / 0.002) ** 2)
-    sweep = 0.55 + 0.45 * np.cos(TAU * ph - (X - CX) / W * 3.0)   # light travelling along the rim
+    sweep = 0.55 + 0.45 * np.cos(TAU * STAGE_RIM * ph - (X - CX) / W * 3.0)   # light travelling along the rim
     img = img + (light - img) * ((rim * 0.55 * sweep + rim2 * 0.25))[..., None]
     refl = floor * np.exp(-((X - CX) / (W * 0.3)) ** 2) * smooth(0.985, 0.93, e) * 0.10
     img = img + (light - img) * refl[..., None]
@@ -388,7 +389,7 @@ def spotlight_stage(t, P):
         x0, x1, y0, y1 = max(int(x) - m, 0), min(int(x) + m, W), max(int(y) - m, 0), min(int(y) + m, H)
         if x0 >= x1 or y0 >= y1: continue
         d = np.hypot(X[y0:y1, x0:x1] - x, Y[y0:y1, x0:x1] - y)
-        tw = 0.45 + 0.55 * (0.5 + 0.5 * np.sin(TAU * (k * ph + p0)))
+        tw = 0.35 + 0.65 * (0.5 + 0.5 * np.sin(TAU * ((k + 1) * ph + p0)))
         bk[y0:y1, x0:x1] += smooth(r, r * 0.55, d) * a * tw
     img = img + (light - img) * np.clip(bk, 0, 1)[..., None] * 0.55
     return img
