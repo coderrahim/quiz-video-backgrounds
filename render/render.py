@@ -409,13 +409,73 @@ def spotlight_stage(t, P):
         img = img + (light - img) * (band * 0.16)[..., None]
     return img
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage,
+# ---------------- Design 01: Neon Arena (esports stage) ----------------
+ARENA_CELLS_PER_LOOP = 6        # grid rolls toward camera 6 cells per 21 s (one per 3.5 s)
+def _aa_line(v, w=1.2):
+    """anti-aliased line at integer values of field v (screen-space width ~w px)."""
+    gy, gx = np.gradient(v)
+    fw = np.hypot(gx, gy) + 1e-6
+    d = np.abs(v - np.round(v)) / fw
+    return np.clip(1 - (d - w * 0.5), 0, 1)
+
+def neon_arena(t, P):
+    ph = t / DUR; name = P.get("name")
+    img = stops_radial(QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF)), ph)
+    light = np.float32([1, 1, 1]) * 0.45 + P["accent"] * 0.55
+    yh = H * 0.70                                   # horizon
+    below = Y > yh + 1
+    dy = np.maximum(Y - yh, 1.0)
+    z = 260.0 / dy                                   # depth
+    u = (X - CX) * z / 120.0                         # world x in cells
+    v = z * 2.2 + ARENA_CELLS_PER_LOOP * ph          # world depth in cells (scrolls toward camera)
+    lines = np.maximum(_aa_line(u, 1.6), _aa_line(v, 1.6))
+    major = np.maximum(_aa_line(u / 4, 2.4), 0)      # every 4th column brighter
+    fog = smooth(0, 160, dy)                         # fade into horizon
+    grid = (lines * 0.55 + major * 0.45) * fog * below
+    floor = smooth(yh - 2, yh + 30, Y)
+    img = img * (1 - 0.45 * floor[..., None])        # darker floor
+    img = img + (light - img) * (grid * 0.65)[..., None]
+    # horizon glow
+    hg = np.exp(-((Y - yh) / 26) ** 2) * (0.55 + 0.45 * np.exp(-((X - CX) / (W * 0.35)) ** 2))
+    img = img + (light - img) * (hg * 0.55)[..., None]
+    # light beams rising from the bottom corners, crossing outward
+    for bx, angs in [(-40, (-62, -78)), (W + 40, (-118, -102))]:
+        by = H + 40
+        ang = np.degrees(np.arctan2(Y - by, X - bx))
+        for i, a in enumerate(angs):
+            a0 = a + 4 * np.sin(TAU * (2 * ph + i * 0.25))
+            beam = np.exp(-((ang - a0) / 2.6) ** 2) * smooth(1500, 200, np.hypot(X - bx, Y - by))
+            beam *= 1 - 0.85 * np.exp(-(((X - CX) / (W * 0.25)) ** 2 + ((Y - CY) / (H * 0.3)) ** 2))
+            img = img + (light - img) * (beam * 0.30)[..., None]
+    # neon corner brackets
+    br = np.zeros((H, W), np.float32); m, L, w = 46, 150, 3
+    for cx_, cy_, sx, sy in [(m, m, 1, 1), (W - m, m, -1, 1), (m, H - m, 1, -1), (W - m, H - m, -1, -1)]:
+        hx = (np.abs(Y - cy_) < w / 2 + 0.5) & ((X - cx_) * sx >= 0) & ((X - cx_) * sx < L)
+        vy = (np.abs(X - cx_) < w / 2 + 0.5) & ((Y - cy_) * sy >= 0) & ((Y - cy_) * sy < L * 0.6)
+        br = np.maximum(br, (hx | vy).astype(np.float32))
+    pulse = 0.75 + 0.25 * np.sin(TAU * 3 * ph)
+    glow = np.asarray(Image.fromarray((br * 255).astype(np.uint8)).filter(__import__("PIL.ImageFilter", fromlist=["x"]).GaussianBlur(8)), np.float32) / 255
+    img = img + (light - img) * (np.clip(br + glow * 1.6, 0, 1) * 0.8 * pulse)[..., None]
+    # rising particles near the sides (each wraps once per loop)
+    g = np.random.default_rng(11); pt = np.zeros((H, W), np.float32)
+    for _ in range(46):
+        side = g.uniform() < 0.5
+        x = g.uniform(30, W * 0.22) if side else g.uniform(W * 0.78, W - 30)
+        y = (g.uniform(0, 1) - ph * int(g.integers(1, 3))) % 1.0 * (H + 40) - 20
+        r = g.uniform(1.5, 3.5); a = g.uniform(0.3, 0.9)
+        x0, x1, y0, y1 = int(max(x - 8, 0)), int(min(x + 8, W)), int(max(y - 8, 0)), int(min(y + 8, H))
+        if x0 < x1 and y0 < y1:
+            pt[y0:y1, x0:x1] += np.exp(-((X[y0:y1, x0:x1] - x) ** 2 + (Y[y0:y1, x0:x1] - y) ** 2) / r ** 2) * a
+    img = img + (light - img) * np.clip(pt, 0, 1)[..., None] * 0.8
+    return img
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 
