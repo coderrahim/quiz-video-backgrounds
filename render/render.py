@@ -536,13 +536,77 @@ def quiz_pop(t, P):
     tint = np.float32([1, 1, 1]) * 0.5 + img * 0.5
     return img + (tint - img) * pat * 0.30 * clear
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop,
+# ---------------- Design 04: Diagonal Slash (sports-broadcast bands) ----------------
+_SLASH_ICONS = None
+def _slash_icons():
+    global _SLASH_ICONS
+    if _SLASH_ICONS is None:
+        from PIL import ImageFilter
+        D = doodles; out = []
+        for fn, x, y, size, rot in [(D.bigq, 150, 150, 150, -18), (D.bulb, 360, 70, 110, -10), (D.trophy, 90, 360, 110, 8),
+                                    (D.stopwatch, 1770, 930, 130, 10), (D.bigq, 1560, 1000, 120, 16), (D.star, 1830, 730, 90, -8)]:
+            im = fn().rotate(rot, resample=Image.BICUBIC, expand=True)
+            sc = size / max(im.size); im = im.resize((max(1, int(im.width * sc)), max(1, int(im.height * sc))), Image.LANCZOS)
+            im = im.filter(ImageFilter.MaxFilter(3))
+            out.append((x, y, np.asarray(im, np.float32) / 255))
+        _SLASH_ICONS = out
+    return _SLASH_ICONS
+
+def diagonal_slash(t, P):
+    ph = t / DUR; name = P.get("name")
+    img = stops_radial(QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF)), ph)
+    phi = np.radians(28); nx_, ny_ = np.cos(phi), np.sin(phi)
+    slide = 40 * np.sin(TAU * ph)                                    # bands breathe in/out (1 cycle per loop)
+    d = (X - CX) * nx_ + (Y - CY) * ny_                              # signed distance across the diagonal channel
+    white = np.float32([1, 1, 1])
+    deep = P["base"] * 0.6 + P["primary"] * 0.4
+    def layer(img, edge, col, side, shade=True, gloss=True):
+        e = side * (d - edge)                                        # >0 inside the band
+        if shade:
+            img = img * (1 - 0.35 * smooth(-40, 0, e) * (1 - smooth(0, 1, e)))[..., None]
+        a = smooth(-1.0, 1.0, e)[..., None]
+        img = img + (col - img) * a
+        if gloss:
+            img = img + (white - img) * (np.exp(-((e - 3) / 2.0) ** 2) * 0.45)[..., None]
+        return img
+    for side in (-1, 1):                                             # -1 = top-left corner, +1 = bottom-right corner
+        o = side * slide
+        # thin accent stripes ahead of the bands
+        for k, off in enumerate((520, 548, 566)):
+            e = np.abs(d - side * off - o)
+            img = img + (white * 0.6 + P["accent"] * 0.4 - img) * (smooth(4 - k, 2 - k, e) * 0.55)[..., None]
+        img = layer(img, side * 600 + o, P["secondary"] * 0.85 + P["accent"] * 0.15, side)
+        img = layer(img, side * 660 + o, P["primary"], side)
+        # halftone dots on the primary band, growing toward the corner
+        e2 = side * (d - (side * 660 + o))
+        gx, gy = (X % 18) - 9, (Y % 18) - 9
+        rad = np.clip((e2 - 10) / 26, 0, 6.0)
+        dots = smooth(rad + 0.8, rad - 0.8, np.hypot(gx, gy)) * (e2 > 0) * (e2 < 150)
+        img = img + (white - img) * (dots * 0.18)[..., None]
+        img = layer(img, side * 810 + o, deep, side)
+        img = layer(img, side * 830 + o, P["accent"], side, shade=False)
+        img = layer(img, side * 845 + o, deep, side, shade=False, gloss=False)
+    # quiz icons inside the corner bands (white, semi-transparent, gentle bob)
+    ic = np.zeros((H, W), np.float32)
+    for i, (x, y, a) in enumerate(_slash_icons()):
+        h, w = a.shape; oy = 8 * np.sin(TAU * (2 * ph + i * 0.3))
+        x0, y0 = int(x - w / 2), int(y + oy - h / 2)
+        xa, ya, xb, yb = max(x0, 0), max(y0, 0), min(x0 + w, W), min(y0 + h, H)
+        if xa < xb and ya < yb:
+            ic[ya:yb, xa:xb] = np.maximum(ic[ya:yb, xa:xb], a[ya - y0:yb - y0, xa - x0:xb - x0])
+    img = img + (white - img) * (ic * 0.45)[..., None]
+    # light sweep along the stripes once per loop
+    sw = np.exp(-(((X + Y * 0.53) / (W + H) - ((ph * 1.3) % 1.3 - 0.15)) / 0.03) ** 2) * smooth(400, 700, np.abs(d))
+    img = img + (white - img) * (sw * 0.18)[..., None]
+    return img
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 
