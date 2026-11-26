@@ -7,6 +7,6 @@ Sample renders of the quiz video backgrounds: 1920×1080, 30 fps, exactly 21 s, 
 | QB11 | Geo Tiles | green, purple, orange, blue, pink, blue-ref (client gradient) + still on #00bbf6→#000890 |
 | QB12 | Bokeh Sparkle | still on client Canva gradient (#00bbf6→#000990) |
 | QB13 | Doodle Play | green ↑, purple ↓, orange →, blue ←, pink ↗ (scroll directions) + still |
+| QB14 | Quiz Doodles | green ↑, purple ↗, orange ↘, blue ↙, pink ↖ + still |
 
 Rendered with `render/render.py` on the `main` branch.
-| QB14 | Quiz Doodles | green ↑, purple ↗, orange ↘, blue ↙, pink ↖ + still |
