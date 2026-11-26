@@ -336,13 +336,70 @@ def quiz_doodles(t, P):
     tint = np.float32([1, 1, 1]) * 0.55 + img * 0.45
     return img + (tint - img) * pat * 0.21
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles,
+# ---------------- Design 03: Spotlight Stage (TV game-show) ----------------
+_STAGE_BOKEH = None
+def _stage_bokeh():
+    global _STAGE_BOKEH
+    if _STAGE_BOKEH is None:
+        g = np.random.default_rng(3); out = []
+        for i in range(34):            # row of lights along the stage rim
+            x = (i + 0.5) / 34 * W + g.uniform(-15, 15)
+            y = H - 175 - 70 * (1 - ((x - CX) / CX) ** 2) * 0 + g.uniform(-30, 30) - 40 * np.cos((x - CX) / CX * 1.4)
+            out.append((x, y, g.uniform(10, 26), g.uniform(0.35, 0.8), g.uniform(0, 1), int(g.integers(1, 4))))
+        for corner in [(0, 0), (W, 0)]:  # clusters in the top corners
+            for _ in range(10):
+                x = corner[0] + (1 if corner[0] == 0 else -1) * g.uniform(20, 420); y = g.uniform(15, 260)
+                out.append((x, y, g.uniform(8, 30), g.uniform(0.25, 0.6), g.uniform(0, 1), int(g.integers(1, 4))))
+        _STAGE_BOKEH = out
+    return _STAGE_BOKEH
+
+def spotlight_stage(t, P):
+    ph = t / DUR
+    img = stops_radial(DOODLE_STOPS.get(P.get("name"), PURPLE_REF), ph)
+    light = np.float32([1, 1, 1]) * 0.6 + P["accent"] * 0.4
+    # sunburst rays from just below centre; rotate exactly one ray period per loop (seamless, very slow)
+    ox, oy = CX, CY + 60
+    th = np.arctan2(Y - oy, X - ox); N = 20
+    ray = smooth(0.15, 0.55, 0.5 + 0.5 * np.cos(N * th - TAU * ph))
+    rn = np.hypot((X - ox) / (W / 2), (Y - oy) / (H / 2))
+    ray *= smooth(0.38, 0.95, rn)                     # keep centre clean
+    img = img + (light - img) * (ray * 0.07)[..., None]
+    # two spotlight cones from top corners, gentle sway (+-3 deg, 1 cycle per loop)
+    for sx, base in [(-60, 52), (W + 60, 128)]:
+        sy = -80
+        ang = np.degrees(np.arctan2(Y - sy, X - sx))
+        a0 = base + 3 * np.sin(TAU * ph + (0 if sx < 0 else np.pi))
+        cone = np.exp(-((ang - a0) / 9.0) ** 2) * smooth(1700, 300, np.hypot(X - sx, Y - sy))
+        cone *= 1 - 0.75 * np.exp(-(((X - CX) / (W * 0.24)) ** 2 + ((Y - CY) / (H * 0.26)) ** 2))
+        img = img + (light - img) * (cone * 0.22)[..., None]
+    # curved glossy stage rim + darker floor at the bottom
+    e = np.hypot((X - CX) / 1300, (Y - (H + 640)) / 830)
+    floor = smooth(1.0, 0.985, e)
+    img = img * (1 - 0.35 * floor[..., None])
+    rim = np.exp(-((e - 1.0) / 0.0035) ** 2); rim2 = np.exp(-((e - 0.965) / 0.002) ** 2)
+    sweep = 0.55 + 0.45 * np.cos(TAU * ph - (X - CX) / W * 3.0)   # light travelling along the rim
+    img = img + (light - img) * ((rim * 0.55 * sweep + rim2 * 0.25))[..., None]
+    refl = floor * np.exp(-((X - CX) / (W * 0.3)) ** 2) * smooth(0.985, 0.93, e) * 0.10
+    img = img + (light - img) * refl[..., None]
+    # bokeh lights
+    bk = np.zeros((H, W), np.float32)
+    for x, y, r, a, p0, k in _stage_bokeh():
+        m = int(r * 1.6) + 2
+        x0, x1, y0, y1 = max(int(x) - m, 0), min(int(x) + m, W), max(int(y) - m, 0), min(int(y) + m, H)
+        if x0 >= x1 or y0 >= y1: continue
+        d = np.hypot(X[y0:y1, x0:x1] - x, Y[y0:y1, x0:x1] - y)
+        tw = 0.45 + 0.55 * (0.5 + 0.5 * np.sin(TAU * (k * ph + p0)))
+        bk[y0:y1, x0:x1] += smooth(r, r * 0.55, d) * a * tw
+    img = img + (light - img) * np.clip(bk, 0, 1)[..., None] * 0.55
+    return img
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 
