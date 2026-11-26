@@ -309,13 +309,34 @@ def doodle_play(t, P):
     tint = np.float32([1, 1, 1]) * 0.55 + img * 0.45
     return img + (tint - img) * pat * 0.21
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play,
+# ---------------- Design 14: Quiz Doodles ----------------
+_QMOS = None
+def _qmosaic():
+    global _QMOS
+    if _QMOS is None:
+        t = np.asarray(doodles.tile(doodles.QUIZ_LAYOUT), np.float32) / 255; T = doodles.TILE
+        nx, ny = W // T + 4, H // T + 4
+        _QMOS = Image.fromarray((np.tile(t, (ny, nx)) * 255).astype(np.uint8))
+    return _QMOS
+
+QUIZ_STOPS = {"green": [(0.0, "#a2f25a"), (0.45, "#3cbd3c"), (0.88, "#0d7a3a"), (1.0, "#075f30")]}
+
+def quiz_doodles(t, P):
+    ph = t / DUR; T = doodles.TILE
+    dx, dy = DOODLE_DIR.get(P.get("name"), (0, -1))
+    m = _qmosaic().transform((W, H), Image.AFFINE, (1, 0, T * 1.2 - dx * T * ph, 0, 1, T * 1.05 - dy * T * ph), resample=Image.BICUBIC)
+    pat = (np.asarray(m, np.float32) / 255)[..., None]
+    img = stops_radial(QUIZ_STOPS.get(P.get("name"), DOODLE_STOPS.get(P.get("name"), PURPLE_REF)), ph)
+    tint = np.float32([1, 1, 1]) * 0.55 + img * 0.45
+    return img + (tint - img) * pat * 0.21
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design == 'doodle-play') else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 

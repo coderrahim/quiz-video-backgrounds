@@ -187,10 +187,11 @@ LAYOUT = [
 TILE = 960        # px at 1x (layout units are 640 -> x1.5)
 U = 1.5
 
-def tile():
+def tile(layout=None):
+    layout = layout or LAYOUT
     T = TILE * 3
     big = np.zeros((T, T), np.float32)
-    for fn, x, y, rot in LAYOUT:
+    for fn, x, y, rot in layout:
         ic = fn().rotate(rot, resample=Image.BICUBIC, expand=True)
         a = np.asarray(ic, np.float32) / 255
         h, w = a.shape
@@ -202,3 +203,105 @@ def tile():
                 if xa < xb and ya < yb:
                     big[ya:yb, xa:xb] = np.maximum(big[ya:yb, xa:xb], a[ya - Y0:yb - Y0, xa - X0:xb - X0])
     return Image.fromarray((big * 255).astype(np.uint8)).resize((TILE, TILE), Image.LANCZOS)
+
+
+# ======================= Quiz Doodles (design 14) =======================
+def qmark(scale=1.0):
+    im, d = _canvas(130)
+    _arcp(d, 65, 45, 28, 26, 200, 360 + 40)
+    _curve(d, (65 + 28 * math.cos(math.radians(40)), 45 + 26 * math.sin(math.radians(40))), (72, 75), (64, 72), (64, 92), w=LW * 1.6)
+    _el(d, [58, 104, 70, 116], fill=255)
+    return im
+
+def exclaim():
+    im, d = _canvas(90)
+    _poly(d, [(38, 12), (54, 12), (50, 60), (42, 60)], fill=F); _el(d, [40, 68, 52, 80], fill=255)
+    return im
+
+def bulb():
+    im, d = _canvas(140)
+    sh, ds = _canvas(140)
+    ds.ellipse([35 * SS, 18 * SS, 105 * SS, 88 * SS], fill=255)
+    ds.polygon([(50 * SS, 78 * SS), (90 * SS, 78 * SS), (84 * SS, 100 * SS), (56 * SS, 100 * SS)], fill=255)
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    _ln(d, [(57, 108), (83, 108)]); _ln(d, [(60, 117), (80, 117)])
+    _ln(d, [(62, 92), (62, 70), (70, 62), (78, 70), (78, 92)], w=2.4)
+    for a in (-150, -120, -90, -60, -30):
+        r0, r1 = 46, 58; c = math.radians(a)
+        _ln(d, [(70 + r0 * math.cos(c), 53 + r0 * math.sin(c)), (70 + r1 * math.cos(c), 53 + r1 * math.sin(c))])
+    return im
+
+def stopwatch():
+    im, d = _canvas(140)
+    _el(d, [25, 32, 115, 122], fill=F); _el(d, [38, 45, 102, 109])
+    _rr(d, [60, 12, 80, 24], 3); _ln(d, [(70, 24), (70, 32)]); _ln(d, [(104, 34), (112, 26)])
+    _ln(d, [(70, 77), (70, 55)]); _ln(d, [(70, 77), (86, 86)]); _el(d, [66, 73, 74, 81], fill=255)
+    return im
+
+def buzzer():
+    im, d = _canvas(150)
+    _rr(d, [22, 88, 128, 122], 8, fill=F)
+    sh, ds = _canvas(150)
+    ds.pieslice([38 * SS, 48 * SS, 112 * SS, 122 * SS], 180, 360, fill=255)
+    ds.rectangle([38 * SS, 84 * SS, 112 * SS, 89 * SS], fill=255)
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    _arcp(d, 75, 84, 24, 20, 215, 260, w=2.4)
+    for a in (-140, -90, -40):
+        c = math.radians(a); _ln(d, [(75 + 48 * math.cos(c), 80 + 48 * math.sin(c)), (75 + 60 * math.cos(c), 80 + 60 * math.sin(c))])
+    return im
+
+def check():
+    im, d = _canvas(110)
+    _el(d, [10, 10, 100, 100], fill=F); _ln(d, [(32, 56), (48, 72), (78, 38)], w=LW * 1.5)
+    return im
+
+def cross():
+    im, d = _canvas(110)
+    _el(d, [10, 10, 100, 100]); _ln(d, [(37, 37), (73, 73)], w=LW * 1.4); _ln(d, [(73, 37), (37, 73)], w=LW * 1.4)
+    return im
+
+def bubble():
+    im, d = _canvas(160)
+    sh, ds = _canvas(160)
+    ds.rounded_rectangle([14 * SS, 22 * SS, 146 * SS, 108 * SS], radius=30 * SS, fill=255)
+    ds.polygon([(40 * SS, 100 * SS), (34 * SS, 138 * SS), (70 * SS, 104 * SS)], fill=255)
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    for x in (55, 80, 105): _el(d, [x - 7, 58, x + 7, 72], fill=255)
+    return im
+
+def puzzle():
+    im, d = _canvas(140)
+    sh, ds = _canvas(140)
+    ds.rectangle([28 * SS, 38 * SS, 102 * SS, 112 * SS], fill=255)
+    ds.ellipse([52 * SS, 18 * SS, 78 * SS, 44 * SS], fill=255)      # top knob
+    ds.ellipse([96 * SS, 62 * SS, 122 * SS, 88 * SS], fill=255)     # right knob
+    ds.ellipse([52 * SS, 100 * SS, 78 * SS, 126 * SS], fill=0)      # bottom socket
+    im = _outline_shape(im, sh)
+    return im
+
+def magnifier():
+    im, d = _canvas(140)
+    _el(d, [20, 20, 90, 90], fill=F); _arcp(d, 55, 55, 24, 24, 200, 260, w=2.4)
+    _ln(d, [(82, 82), (118, 118)], w=LW * 2.6)
+    return im
+
+def pencil():
+    im, d = _canvas(150)
+    _poly(d, [(30, 120), (36, 98), (108, 26), (124, 42), (52, 114)], fill=F)
+    _ln(d, [(96, 38), (112, 54)]); _ln(d, [(36, 98), (52, 114)])
+    return im
+
+def medal():
+    im, d = _canvas(130)
+    _poly(d, [(40, 8), (58, 8), (70, 48), (52, 48)]); _poly(d, [(90, 8), (72, 8), (60, 48), (78, 48)])
+    _el(d, [33, 50, 97, 114], fill=F); _el(d, [46, 63, 84, 101])
+    return im
+
+QUIZ_LAYOUT = [
+    (qmark, 70, 70, -14), (bulb, 260, 60, 8), (stopwatch, 470, 80, -6),
+    (check, 600, 220, 0), (bubble, 380, 230, -4), (exclaim, 190, 200, 12),
+    (buzzer, 70, 300, 4), (puzzle, 250, 380, 10), (qmark, 480, 370, 16),
+    (magnifier, 80, 500, -10), (pencil, 330, 520, 0), (medal, 560, 500, 8),
+    (cross, 190, 590, -8), (star, 460, 590, 14),
+    (dots, 160, 130, 0), (sparkle, 340, 140, 0), (sparkle, 600, 360, 0), (heart, 620, 620, 10), (dots, 400, 610, 0),
+]
