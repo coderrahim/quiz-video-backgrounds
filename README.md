@@ -9,3 +9,4 @@ Sample renders of the quiz video backgrounds: 1920×1080, 30 fps, exactly 21 s, 
 | QB13 | Doodle Play | green ↑, purple ↓, orange →, blue ←, pink ↗ (scroll directions) + still |
 
 Rendered with `render/render.py` on the `main` branch.
+| QB14 | Quiz Doodles | green ↑, purple ↗, orange ↘, blue ↙, pink ↖ + still |
