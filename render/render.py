@@ -520,9 +520,15 @@ def _pmosaic():
         _PMOS = Image.fromarray((np.tile(t, (ny, nx)) * 255).astype(np.uint8))
     return _PMOS
 
+QUIZPOP_DIR = {"blue": (-1, 1),     # top-right -> bottom-left
+               "purple": (1, -1),   # bottom-left -> top-right
+               "orange": (1, 1),    # top-left -> bottom-right
+               "pink": (-1, -1),    # bottom-right -> top-left
+               "green": (1, -1)}    # bottom-left -> top-right (only 4 diagonals exist)
+
 def quiz_pop(t, P):
     ph = t / DUR; T = doodles.TILE; name = P.get("name")
-    dx, dy = QUIZ_DIR.get(name, (0, -1))
+    dx, dy = QUIZPOP_DIR.get(name, (1, -1))
     m = _pmosaic().transform((W, H), Image.AFFINE, (1, 0, T * 1.2 - dx * T * ph, 0, 1, T * 1.05 - dy * T * ph), resample=Image.BICUBIC)
     pat = (np.asarray(m, np.float32) / 255)[..., None]
     img = stops_radial(QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF)), ph)
