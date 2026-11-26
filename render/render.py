@@ -510,13 +510,33 @@ def neon_arena(t, P):
     img = img + (light - img) * ln[..., None] * 0.75 * flick
     return img
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena,
+# ---------------- Design 15: Quiz Pop (dense quiz icons, centre faded) ----------------
+_PMOS = None
+def _pmosaic():
+    global _PMOS
+    if _PMOS is None:
+        t = np.asarray(doodles.tile(doodles.QUIZPOP_LAYOUT), np.float32) / 255; T = doodles.TILE
+        nx, ny = W // T + 4, H // T + 4
+        _PMOS = Image.fromarray((np.tile(t, (ny, nx)) * 255).astype(np.uint8))
+    return _PMOS
+
+def quiz_pop(t, P):
+    ph = t / DUR; T = doodles.TILE; name = P.get("name")
+    dx, dy = QUIZ_DIR.get(name, (0, -1))
+    m = _pmosaic().transform((W, H), Image.AFFINE, (1, 0, T * 1.2 - dx * T * ph, 0, 1, T * 1.05 - dy * T * ph), resample=Image.BICUBIC)
+    pat = (np.asarray(m, np.float32) / 255)[..., None]
+    img = stops_radial(QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF)), ph)
+    clear = 1 - 0.75 * np.exp(-(((X - CX) / (W * 0.24)) ** 2 + ((Y - CY) / (H * 0.27)) ** 2))[..., None]   # centre stays readable
+    tint = np.float32([1, 1, 1]) * 0.5 + img * 0.5
+    return img + (tint - img) * pat * 0.30 * clear
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 

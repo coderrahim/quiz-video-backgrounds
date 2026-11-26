@@ -305,3 +305,61 @@ QUIZ_LAYOUT = [
     (cross, 190, 590, -8), (star, 460, 590, 14),
     (dots, 160, 130, 0), (sparkle, 340, 140, 0), (sparkle, 600, 360, 0), (heart, 620, 620, 10), (dots, 400, 610, 0),
 ]
+
+
+# ======================= Quiz Pop (design 15) extra icons =======================
+def flag():
+    im, d = _canvas(150)
+    _ln(d, [(30, 140), (30, 18)], w=LW * 1.3)
+    # waving flag outline
+    top = [(30 + i * 1.0, 20 + 8 * math.sin(i / 90 * 2 * math.pi)) for i in range(0, 91, 5)]
+    bot = [(30 + i * 1.0, 78 + 8 * math.sin(i / 90 * 2 * math.pi)) for i in range(90, -1, -5)]
+    pts = top + bot
+    p = [(x * SS, y * SS) for x, y in pts]
+    d.polygon(p, fill=F)
+    # checker squares
+    for r in range(4):
+        for c in range(6):
+            if (r + c) % 2 == 0:
+                x0 = 30 + c * 15; yo = 8 * math.sin((c * 15 + 7.5) / 90 * 2 * math.pi)
+                y0 = 20 + r * 14.5 + yo
+                d.polygon([((x0) * SS, (y0) * SS), ((x0 + 15) * SS, (y0) * SS), ((x0 + 15) * SS, (y0 + 14.5) * SS), (x0 * SS, (y0 + 14.5) * SS)], fill=255)
+    _ln(d, pts + [pts[0]])
+    return im
+
+def qbubble():
+    im, d = _canvas(150)
+    sh, ds = _canvas(150)
+    ds.rounded_rectangle([14 * SS, 18 * SS, 136 * SS, 104 * SS], radius=28 * SS, fill=255)
+    ds.polygon([(96 * SS, 96 * SS), (120 * SS, 132 * SS), (70 * SS, 102 * SS)], fill=255)
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    _arcp(d, 75, 48, 15, 14, 200, 400, w=LW * 1.4)
+    _ln(d, [(75 + 15 * math.cos(math.radians(40)), 48 + 14 * math.sin(math.radians(40))), (75, 68), (75, 74)], w=LW * 1.4)
+    _el(d, [71, 82, 79, 90], fill=255)
+    return im
+
+def burst():
+    im, d = _canvas(90)
+    for a in (-60, -30, 0):
+        c = math.radians(a - 90); _ln(d, [(45 + 14 * math.cos(c), 70 + 14 * math.sin(c)), (45 + 44 * math.cos(c), 70 + 44 * math.sin(c))], w=LW * 1.3)
+    return im
+
+def ring():
+    im, d = _canvas(60)
+    _el(d, [12, 12, 48, 48], w=LW * 1.2); return im
+
+def bigq():
+    im, d = _canvas(140)
+    _arcp(d, 70, 48, 30, 28, 200, 400, w=LW * 2.4)
+    _curve(d, (70 + 30 * math.cos(math.radians(40)), 48 + 28 * math.sin(math.radians(40))), (72, 80), (70, 84), (70, 96), w=LW * 2.4)
+    _el(d, [62, 108, 78, 124], fill=255)
+    return im
+
+QUIZPOP_LAYOUT = [
+    (bigq, 60, 60, -14), (bulb, 220, 70, 10), (flag, 380, 60, -12), (qbubble, 560, 90, 6),
+    (stopwatch, 120, 230, -10), (star, 260, 200, 15), (trophy, 420, 240, 4), (burst, 560, 230, -20),
+    (flag, 70, 400, 10), (qbubble, 230, 380, -8), (bigq, 400, 420, 12), (bulb, 560, 400, -8),
+    (trophy, 120, 560, -6), (stopwatch, 300, 580, 8), (star, 470, 560, -10), (flag, 600, 590, 6),
+    (ring, 170, 140, 0), (ring, 480, 330, 0), (ring, 30, 300, 0), (sparkle, 330, 320, 0), (sparkle, 620, 300, 0),
+    (dots, 340, 130, 0), (burst, 30, 480, 30), (ring, 380, 500, 0), (sparkle, 200, 480, 0),
+]
