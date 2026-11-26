@@ -321,9 +321,15 @@ def _qmosaic():
 
 QUIZ_STOPS = {"green": [(0.0, "#a2f25a"), (0.45, "#3cbd3c"), (0.88, "#0d7a3a"), (1.0, "#075f30")]}
 
+QUIZ_DIR = {"green": (0, -1),      # bottom -> top
+            "purple": (1, -1),    # bottom-left -> top-right
+            "orange": (1, 1),     # top-left -> bottom-right
+            "blue": (-1, 1),      # top-right -> bottom-left
+            "pink": (-1, -1)}     # bottom-right -> top-left
+
 def quiz_doodles(t, P):
     ph = t / DUR; T = doodles.TILE
-    dx, dy = DOODLE_DIR.get(P.get("name"), (0, -1))
+    dx, dy = QUIZ_DIR.get(P.get("name"), (0, -1))
     m = _qmosaic().transform((W, H), Image.AFFINE, (1, 0, T * 1.2 - dx * T * ph, 0, 1, T * 1.05 - dy * T * ph), resample=Image.BICUBIC)
     pat = (np.asarray(m, np.float32) / 255)[..., None]
     img = stops_radial(QUIZ_STOPS.get(P.get("name"), DOODLE_STOPS.get(P.get("name"), PURPLE_REF)), ph)
