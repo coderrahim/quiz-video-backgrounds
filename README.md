@@ -9,5 +9,7 @@ Sample renders of the quiz video backgrounds: 1920×1080, 30 fps, exactly 21 s, 
 | QB13 | Doodle Play | green ↑, purple ↓, orange →, blue ←, pink ↗ (scroll directions) + still |
 | QB14 | Quiz Doodles | green ↑, purple ↗, orange ↘, blue ↙, pink ↖ + still |
 | QB03 | Spotlight Stage | blue (no sweep), green ↙, purple ↗, orange ↘, pink ↖ (diagonal shine) + still |
+| QB01 | Neon Arena | purple still (with neon quiz icons) |
+| QB15 | Quiz Pop | blue ↙ + still |
 
 Rendered with `render/render.py` on the `main` branch.
