@@ -418,6 +418,43 @@ def _aa_line(v, w=1.2):
     d = np.abs(v - np.round(v)) / fw
     return np.clip(1 - (d - w * 0.5), 0, 1)
 
+# floating neon quiz icons for Neon Arena (edges/corners only)
+_ARENA_ICONS = None
+def _arena_icons():
+    global _ARENA_ICONS
+    if _ARENA_ICONS is None:
+        from PIL import ImageFilter
+        D = doodles
+        spec = [  # fn, centre x, centre y, size px, rotation
+            (D.qmark, 250, 210, 150, -12), (D.bulb, 520, 120, 120, 8), (D.stopwatch, 1420, 120, 120, -8),
+            (D.qmark, 1690, 230, 170, 14), (D.buzzer, 140, 470, 130, 0), (D.check, 400, 400, 95, 0),
+            (D.bubble, 1530, 420, 140, -6), (D.cross, 1800, 520, 95, 0), (D.trophy, 330, 640, 115, -6),
+            (D.star, 1650, 650, 95, 12), (D.exclaim, 820, 90, 80, 10), (D.puzzle, 1110, 95, 95, -10),
+        ]
+        out = []
+        for fn, x, y, size, rot in spec:
+            im = fn().rotate(rot, resample=Image.BICUBIC, expand=True)
+            sc = size * 1.25 / max(im.size); im = im.resize((max(1, int(im.width * sc)), max(1, int(im.height * sc))), Image.LANCZOS)
+            im = im.filter(ImageFilter.MaxFilter(3))          # bolder neon line
+            a = np.asarray(im, np.float32) / 255
+            pad = 24; a = np.pad(a, pad)
+            glow = np.asarray(Image.fromarray((a * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(11)), np.float32) / 255
+            out.append((x, y, a, glow))
+        _ARENA_ICONS = out
+    return _ARENA_ICONS
+
+def arena_icon_layer(ph):
+    line = np.zeros((H, W), np.float32); glow = np.zeros((H, W), np.float32)
+    for i, (x, y, a, g) in enumerate(_arena_icons()):
+        ox = 10 * np.sin(TAU * (2 * ph + i * 0.37)); oy = 14 * np.sin(TAU * (3 * ph + i * 0.21))   # gentle float
+        h, w = a.shape
+        x0, y0 = int(round(x + ox - w / 2)), int(round(y + oy - h / 2))
+        xa, ya, xb, yb = max(x0, 0), max(y0, 0), min(x0 + w, W), min(y0 + h, H)
+        if xa >= xb or ya >= yb: continue
+        line[ya:yb, xa:xb] = np.maximum(line[ya:yb, xa:xb], a[ya - y0:yb - y0, xa - x0:xb - x0])
+        glow[ya:yb, xa:xb] = np.maximum(glow[ya:yb, xa:xb], g[ya - y0:yb - y0, xa - x0:xb - x0])
+    return line, glow
+
 def neon_arena(t, P):
     ph = t / DUR; name = P.get("name")
     img = stops_radial(QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF)), ph)
@@ -467,6 +504,10 @@ def neon_arena(t, P):
         if x0 < x1 and y0 < y1:
             pt[y0:y1, x0:x1] += np.exp(-((X[y0:y1, x0:x1] - x) ** 2 + (Y[y0:y1, x0:x1] - y) ** 2) / r ** 2) * a
     img = img + (light - img) * np.clip(pt, 0, 1)[..., None] * 0.8
+    ln, gl = arena_icon_layer(ph)
+    flick = 0.85 + 0.15 * np.sin(TAU * 3 * ph)
+    img = img + (light - img) * np.clip(gl * 1.4, 0, 1)[..., None] * 0.45 * flick
+    img = img + (light - img) * ln[..., None] * 0.75 * flick
     return img
 
 DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena,
