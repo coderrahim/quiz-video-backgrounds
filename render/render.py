@@ -354,14 +354,22 @@ def _stage_bokeh():
         _STAGE_BOKEH = out
     return _STAGE_BOKEH
 
+STAGE_DIR = {"green": (-1, 1),     # top-right -> bottom-left
+             "purple": (1, -1),    # bottom-left -> top-right
+             "orange": (1, 1),     # top-left -> bottom-right
+             "pink": (-1, -1)}     # bottom-right -> top-left   (blue: no sweep, as approved)
+
 def spotlight_stage(t, P):
     ph = t / DUR
-    img = stops_radial(DOODLE_STOPS.get(P.get("name"), PURPLE_REF), ph)
+    name = P.get("name")
+    img = stops_radial(QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF)), ph)
+    sdir = STAGE_DIR.get(name)
     light = np.float32([1, 1, 1]) * 0.6 + P["accent"] * 0.4
     # sunburst rays from just below centre; rotate exactly one ray period per loop (seamless, very slow)
     ox, oy = CX, CY + 60
     th = np.arctan2(Y - oy, X - ox); N = 20
-    ray = smooth(0.15, 0.55, 0.5 + 0.5 * np.cos(N * th - TAU * STAGE_RAYS * ph))
+    spin = -1 if (sdir and sdir[0] < 0) else 1
+    ray = smooth(0.15, 0.55, 0.5 + 0.5 * np.cos(N * th - spin * TAU * STAGE_RAYS * ph))
     rn = np.hypot((X - ox) / (W / 2), (Y - oy) / (H / 2))
     ray *= smooth(0.38, 0.95, rn)                     # keep centre clean
     img = img + (light - img) * (ray * 0.07)[..., None]
@@ -392,6 +400,13 @@ def spotlight_stage(t, P):
         tw = 0.35 + 0.65 * (0.5 + 0.5 * np.sin(TAU * ((k + 1) * ph + p0)))
         bk[y0:y1, x0:x1] += smooth(r, r * 0.55, d) * a * tw
     img = img + (light - img) * np.clip(bk, 0, 1)[..., None] * 0.55
+    if sdir:   # soft diagonal shine band sweeping across, STAGE_RIM passes per loop (periodic -> seamless)
+        ux, uy = sdir[0] / np.sqrt(2), sdir[1] / np.sqrt(2)
+        L = abs(ux) * W + abs(uy) * H + 700
+        u = ((X - CX) * ux + (Y - CY) * uy) / L
+        band = np.cos(np.pi * (u - STAGE_RIM * ph)) ** 40          # one narrow band per period L
+        band *= 1 - 0.7 * np.exp(-(((X - CX) / (W * 0.26)) ** 2 + ((Y - CY) / (H * 0.28)) ** 2))
+        img = img + (light - img) * (band * 0.16)[..., None]
     return img
 
 DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage,
