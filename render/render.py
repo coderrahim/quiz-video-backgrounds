@@ -857,14 +857,20 @@ LAT_DIR = {"blue": (-2, 2),     # top-right -> bottom-left   (~28 px/s)
            "purple": (2, -2),   # bottom-left -> top-right
            "orange": (3, 2),    # top-left -> bottom-right   (~36 px/s)
            "pink": (-3, -2)}    # bottom-right -> top-left
-def lattice_layer(lat, ph, name):
+def lattice_layer(lat, ph, name, dirs=None):
     mos, tw, th, dx, dy = lat
-    sx, sy = LAT_DIR.get(name, (-2, 2))
+    sx, sy = (dirs or LAT_DIR).get(name, (-2, 2))
     c, f = tw * 1.2 - sx * dx * ph, th * 1.05 - sy * dy * ph
     return np.asarray(mos.transform((W, H), Image.AFFINE, (1, 0, c, 0, 1, f), resample=Image.BICUBIC), np.float32) / 255
 
 # ---------------- Design 19: Snack Attack (food icons) ----------------
 SNACK_OPACITY = 0.10
+# shuffled per-colour motion for this design (each colour moves differently; grid steps per 21 s loop)
+SNACK_DIR = {"blue": (-3, -2),    # ↖ bottom-right -> top-left
+             "green": (3, 2),     # ↘ top-left -> bottom-right
+             "purple": (-2, 2),   # ↙ top-right -> bottom-left
+             "orange": (2, -2),   # ↗ bottom-left -> top-right
+             "pink": (0, -5)}     # ↑ bottom -> top
 def _PIZZA_SMALL(): return doodles.pizza()      # separate handle so the small-slot pizza can be sized on its own
 def snack_attack(t, P):
     ph = t / DUR; name = P.get("name"); D = doodles
@@ -873,7 +879,7 @@ def snack_attack(t, P):
                         fill=(D.burger, D.pizza, D.fries, D.hotdog, D.sandwich))
     img = stops_radial(FRAME_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph)
     line_col = np.float32([1, 1, 1]) * 0.45 + (hexc(FRAME_LINE[name]) if name in FRAME_LINE else P["accent"]) * 0.55
-    ln = lattice_layer(lat, ph, name)
+    ln = lattice_layer(lat, ph, name, SNACK_DIR)
     return img + (line_col - img) * (ln * SNACK_OPACITY)[..., None]
 
 DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame, "pet-pals": pet_pals, "dream-home": dream_home, "snack-attack": snack_attack,
