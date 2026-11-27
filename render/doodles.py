@@ -702,3 +702,49 @@ def star5():
         p.append((50 + r * math.cos(a), 54 + r * math.sin(a)))
     d.polygon([(x * SS, y * SS) for x, y in p], fill=255)
     return im
+
+
+# ======================= Sound Wave (design 20): music & sound =======================
+def headphones2():
+    im, d = _canvas(160)
+    _arcp(d, 80, 84, 56, 60, 180, 360)
+    sh, ds = _canvas(160)
+    ds.rounded_rectangle([16 * SS, 80 * SS, 46 * SS, 138 * SS], radius=13 * SS, fill=255)
+    ds.rounded_rectangle([114 * SS, 80 * SS, 144 * SS, 138 * SS], radius=13 * SS, fill=255)
+    return _outline_shape(im, sh)
+
+def notes():
+    im, d = _canvas(160)
+    for x, y in [(46, 118), (112, 104)]:
+        im2 = Image.new("L", im.size, 0); d2 = ImageDraw.Draw(im2)
+        d2.ellipse([(x - 18) * SS, (y - 12) * SS, (x + 18) * SS, (y + 12) * SS], fill=255)
+        im2 = im2.rotate(20, center=(x * SS, y * SS), resample=Image.BICUBIC)
+        im = Image.fromarray(np.maximum(np.asarray(im), np.asarray(im2)))
+    d = ImageDraw.Draw(im)
+    _ln(d, [(62, 112), (62, 30)], w=LW * 1.2); _ln(d, [(128, 98), (128, 16)], w=LW * 1.2)
+    _poly(d, [(62, 30), (128, 16), (128, 34), (62, 48)], fill=255)
+    return im
+
+def mic():
+    im, d = _canvas(160)
+    sh, ds = _canvas(160)
+    ds.rounded_rectangle([56 * SS, 14 * SS, 104 * SS, 96 * SS], radius=24 * SS, fill=255)
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    for y in (40, 56, 72): _ln(d, [(60, y), (100, y)], w=2.4)
+    _arcp(d, 80, 72, 40, 40, 0, 180)
+    _ln(d, [(80, 112), (80, 134)]); _ln(d, [(56, 136), (104, 136)])
+    return im
+
+def speaker():
+    im, d = _canvas(170)
+    _poly(d, [(20, 62), (48, 62), (84, 30), (84, 140), (48, 108), (20, 108)], fill=F)
+    for r in (22, 40, 58):
+        _arcp(d, 86, 85, r, r * 1.05, -50, 50)
+    return im
+
+def vinyl():
+    im, d = _canvas(160)
+    _el(d, [14, 14, 146, 146])
+    _el(d, [56, 56, 104, 104], fill=F); _el(d, [75, 75, 85, 85], fill=255)
+    _arcp(d, 80, 80, 50, 50, 200, 250, w=2.4); _arcp(d, 80, 80, 38, 38, 20, 70, w=2.4)
+    return im
