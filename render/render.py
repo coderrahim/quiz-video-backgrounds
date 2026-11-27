@@ -603,6 +603,7 @@ def diagonal_slash(t, P):
 # ---------------- Design 16: Icon Frame (outline icons framing a clean centre) ----------------
 FRAME_STOPS = {"blue": [(0.0, "#0a7dff"), (0.45, "#0055e6"), (0.85, "#0019bc"), (1.0, "#02029a")]}
 FRAME_LINE = {"blue": "#2eb6ff"}
+FRAME_CLEAR, FRAME_COUNT, FRAME_OPACITY = 0.0, 135, 0.45
 _FRAME = None
 def _frame_sprites():
     """Poisson-style scatter of outline icons everywhere except an elliptical clean centre."""
@@ -613,11 +614,11 @@ def _frame_sprites():
         big = [D.rocket2, D.trophy2, D.bulb2, D.puzzle2, D.target, D.gear, D.plane, D.palette, D.star, D.hexa, D.dash_curve, D.bigring]
         small = [D.tri, D.square, D.diamond, D.zigzag, D.xcross, D.blob, D.ring, D.sparkle, D.dot, D.dot, D.zigzag, D.tri]
         pts = []; tries = 0
-        while len(pts) < 95 and tries < 30000:
+        while len(pts) < FRAME_COUNT and tries < 40000:
             tries += 1
             x, y = g.uniform(-30, W + 30), g.uniform(-30, H + 30)
             e = ((x - CX) / (W * 0.27)) ** 2 + ((y - CY) / (H * 0.31)) ** 2
-            if e < 1.0: continue                                  # keep centre clean
+            if e < FRAME_CLEAR: continue                          # 0 = elements everywhere (client request)
             isbig = g.uniform() < 0.45
             r = 100 if isbig else 52
             if any((x - px) ** 2 + (y - py) ** 2 < (r + pr) ** 2 * 0.55 for px, py, pr, _ in pts): continue
@@ -667,8 +668,8 @@ def icon_frame(t, P):
         ln[ya:yb, xa:xb] = np.maximum(ln[ya:yb, xa:xb], a[ya - y0:yb - y0, xa - x0:xb - x0])
         gl[ya:yb, xa:xb] = np.maximum(gl[ya:yb, xa:xb], g_[ya - y0:yb - y0, xa - x0:xb - x0])
     tw = 0.8 + 0.2 * np.sin(TAU * 2 * ph)
-    img = img + (line_col - img) * (np.clip(gl * 1.2, 0, 1) * 0.18)[..., None]
-    img = img + (line_col - img) * (ln * 0.80)[..., None]
+    img = img + (line_col - img) * (np.clip(gl * 1.2, 0, 1) * 0.18 * FRAME_OPACITY / 0.8)[..., None]
+    img = img + (line_col - img) * (ln * FRAME_OPACITY)[..., None]
     return img
 
 DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame,
