@@ -796,3 +796,57 @@ def suitcase():
     _ln(d, [(50, 46), (50, 136)]); _ln(d, [(110, 46), (110, 136)])
     _el(d, [34, 136, 46, 148]); _el(d, [114, 136, 126, 148])
     return im
+
+
+# ======================= Science Lab (design 22) =======================
+def atom():
+    im, d = _canvas(160)
+    for ang in (0, 60, 120):
+        e = Image.new("L", im.size, 0); de = ImageDraw.Draw(e)
+        de.ellipse([20 * SS, 58 * SS, 140 * SS, 102 * SS], outline=255, width=int(LW * SS))
+        e = e.rotate(ang, center=(80 * SS, 80 * SS), resample=Image.BICUBIC)
+        im = Image.fromarray(np.maximum(np.asarray(im), np.asarray(e)))
+    d = ImageDraw.Draw(im); _el(d, [70, 70, 90, 90], fill=255)
+    return im
+
+def flask():
+    im, d = _canvas(160)
+    sh, ds = _canvas(160)
+    ds.polygon([(64 * SS, 20 * SS), (96 * SS, 20 * SS), (96 * SS, 64 * SS), (138 * SS, 132 * SS), (132 * SS, 142 * SS),
+                (28 * SS, 142 * SS), (22 * SS, 132 * SS), (64 * SS, 64 * SS)], fill=255)
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    _ln(d, [(56, 20), (104, 20)])
+    _ln(d, [(44, 104), (116, 104)], w=2.4)
+    for x, y, r in [(70, 122, 6), (92, 116, 4), (82, 90, 4)]: _el(d, [x - r, y - r, x + r, y + r])
+    return im
+
+def microscope():
+    im, d = _canvas(160)
+    _rr(d, [30, 132, 130, 144], 5)
+    _arcp(d, 92, 92, 36, 40, -90, 90); _ln(d, [(92, 132), (92, 132)])
+    _ln(d, [(60, 132), (92, 132)])
+    _poly(d, [(56, 26), (74, 16), (100, 64), (82, 74)], fill=F)
+    _ln(d, [(80, 72), (88, 88)], w=LW * 1.4)
+    _ln(d, [(54, 100), (108, 100)])
+    _ln(d, [(92, 52), (110, 62)])
+    return im
+
+def dna():
+    im, d = _canvas(160)
+    a = [(80 + 34 * math.sin(t / 40 * 2 * math.pi), 14 + t * 3.3) for t in range(41)]
+    b = [(80 - 34 * math.sin(t / 40 * 2 * math.pi), 14 + t * 3.3) for t in range(41)]
+    _ln(d, a); _ln(d, b)
+    for t in range(2, 40, 4):
+        _ln(d, [a[t], b[t]], w=2.4)
+    return im
+
+def magnet():
+    im, d = _canvas(160)
+    sh, ds = _canvas(160)
+    ds.pieslice([24 * SS, 20 * SS, 136 * SS, 132 * SS], 180, 360, fill=255)
+    ds.rectangle([24 * SS, 76 * SS, 136 * SS, 140 * SS], fill=255)
+    ds.pieslice([54 * SS, 50 * SS, 106 * SS, 102 * SS], 180, 360, fill=0)
+    ds.rectangle([54 * SS, 76 * SS, 106 * SS, 142 * SS], fill=0)
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    _ln(d, [(24, 116), (54, 116)]); _ln(d, [(106, 116), (136, 116)])
+    return im
