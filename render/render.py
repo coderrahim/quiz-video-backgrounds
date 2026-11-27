@@ -809,13 +809,29 @@ def dream_home(t, P):
     img = img + (line_col - img) * (ln * HOME_OPACITY)[..., None]
     return img
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame, "pet-pals": pet_pals, "dream-home": dream_home,
+# ---------------- Design 19: Snack Attack (food icons) ----------------
+SNACK_OPACITY = 0.32
+def _PIZZA_SMALL(): return doodles.pizza()      # separate handle so the small-slot pizza can be sized on its own
+def snack_attack(t, P):
+    ph = t / DUR; name = P.get("name"); D = doodles
+    pizza_s = _PIZZA_SMALL
+    tl = build_tile("snack2", [D.burger, D.pizza, D.fries, D.sandwich],
+                    [D.hotdog, D.sparkle4, pizza_s, D.dot],
+                    cols=4, rows=2, big_size=135, small_size=44, rot=12, seed=19,
+                    fill_icons=(D.sparkle4, D.dot, D.burger, D.pizza, D.fries, D.hotdog, D.sandwich, pizza_s),
+                    size_scale={D.dot: 0.45, D.hotdog: 3.6, pizza_s: 2.9}, stroke=7.0, no_dilate=(D.dot, D.sparkle4))
+    img = stops_radial(FRAME_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph)
+    line_col = np.float32([1, 1, 1]) * 0.45 + (hexc(FRAME_LINE[name]) if name in FRAME_LINE else P["accent"]) * 0.55
+    ln, gl = scroll_tile_layer(tl, ph, name)
+    return img + (line_col - img) * (ln * SNACK_OPACITY)[..., None]
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame, "pet-pals": pet_pals, "dream-home": dream_home, "snack-attack": snack_attack,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame', 'icon-frame-float', 'pet-pals', 'dream-home')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame', 'icon-frame-float', 'pet-pals', 'dream-home', 'snack-attack')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 

@@ -642,3 +642,53 @@ def sparkle4():
         p.append((45 + r * math.cos(a), 45 + r * math.sin(a)))
     d.polygon([(x * SS, y * SS) for x, y in p], fill=255)
     return im
+
+
+# ======================= Snack Attack (design 19): food icons =======================
+def burger():
+    im, d = _canvas(160)
+    sh, ds = _canvas(160)
+    ds.pieslice([22 * SS, 22 * SS, 138 * SS, 112 * SS], 180, 360, fill=255)            # top bun
+    a = np.asarray(_outline_shape(Image.new("L", im.size, 0), sh), np.float32)
+    im = Image.fromarray(a.astype(np.uint8)); d = ImageDraw.Draw(im)
+    _ln(d, [(22, 67), (138, 67)])
+    for x, y in [(56, 44), (80, 36), (104, 44), (68, 56), (94, 56)]: _el(d, [x - 3, y - 2, x + 3, y + 3], fill=255)
+    _ln(d, [(22 + i * 9.66, 78 + (6 if i % 2 else -2)) for i in range(13)])               # lettuce
+    _rr(d, [24, 86, 136, 104], 9, fill=F)                                                 # patty
+    _rr(d, [22, 110, 138, 132], 10)                                                       # bottom bun
+    return im
+
+def pizza():
+    im, d = _canvas(160)
+    _poly(d, [(80, 146), (22, 40), (138, 40)], fill=F)
+    _arcp(d, 80, 120, 92, 90, 236, 304, w=LW)
+    _ln(d, [(28, 52), (132, 52)])
+    for x, y, r in [(62, 70, 9), (96, 72, 9), (80, 100, 8), (78, 122, 5)]: _el(d, [x - r, y - r, x + r, y + r])
+    return im
+
+def fries():
+    im, d = _canvas(160)
+    for i, (x, h) in enumerate([(52, 24), (66, 14), (80, 22), (94, 10), (108, 26)]):
+        _rr(d, [x - 6, h, x + 6, 80], 3)
+    sh, ds = _canvas(160)
+    ds.polygon([(34 * SS, 66 * SS), (126 * SS, 66 * SS), (114 * SS, 146 * SS), (46 * SS, 146 * SS)], fill=255)
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    _arcp(d, 80, 66, 20, 16, 0, 180)
+    return im
+
+def hotdog():
+    im, d = _canvas(170)
+    _rr(d, [10, 70, 160, 106], 18)                                                        # sausage
+    sh, ds = _canvas(170)
+    ds.rounded_rectangle([20 * SS, 84 * SS, 150 * SS, 128 * SS], radius=22 * SS, fill=255)  # bun
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    _ln(d, [(30 + i * 11, 86 + (-6 if i % 2 else 0)) for i in range(11)], w=LW * 0.9)     # mustard zigzag
+    return im
+
+def sandwich():
+    im, d = _canvas(160)
+    _poly(d, [(22, 128), (138, 128), (60, 30)], fill=F)
+    _poly(d, [(30, 140), (146, 140), (138, 128), (22, 128)])
+    _ln(d, [(34 + i * 10, 116 + (6 if i % 2 else 0)) for i in range(10)])                 # filling edge
+    _ln(d, [(44, 100), (110, 100)], w=2.4)
+    return im
