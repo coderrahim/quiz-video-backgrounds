@@ -797,11 +797,12 @@ def pet_pals(t, P):
 HOME_OPACITY = 0.32
 def dream_home(t, P):
     ph = t / DUR; name = P.get("name"); D = doodles
-    tl = build_tile("home", [D.house, D.armchair, D.picture_hang, D.lamp, D.house, D.plant, D.picture, D.armchair, D.lamp, D.plant, D.house, D.picture],
-                    [D.sparkle4, D.dot, D.sparkle4, D.dot, D.dot, D.sparkle4],
-                    big_size=135, small_size=46, rot=0, seed=18,
+    # compact 4 x 2 tile -> shorter repeat distance -> slower scroll (~41 px/s) while still seamless
+    tl = build_tile("home2", [D.house, D.armchair, D.picture_hang, D.plant],
+                    [D.lamp, D.sparkle4, D.picture, D.dot],
+                    cols=4, rows=2, big_size=135, small_size=46, rot=0, seed=18,
                     fill_icons=(D.lamp, D.sparkle4, D.dot, D.armchair, D.house),
-                    size_scale={D.dot: 0.4, D.lamp: 1.0}, stroke=7.0, no_dilate=(D.dot, D.sparkle4, D.lamp))
+                    size_scale={D.dot: 0.4, D.lamp: 2.9, D.picture: 2.6}, stroke=7.0, no_dilate=(D.dot, D.sparkle4, D.lamp))
     img = stops_radial(FRAME_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph)
     line_col = np.float32([1, 1, 1]) * 0.45 + (hexc(FRAME_LINE[name]) if name in FRAME_LINE else P["accent"]) * 0.55
     ln, gl = scroll_tile_layer(tl, ph, name)
