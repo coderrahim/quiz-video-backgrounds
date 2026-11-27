@@ -864,7 +864,7 @@ def lattice_layer(lat, ph, name):
     return np.asarray(mos.transform((W, H), Image.AFFINE, (1, 0, c, 0, 1, f), resample=Image.BICUBIC), np.float32) / 255
 
 # ---------------- Design 19: Snack Attack (food icons) ----------------
-SNACK_OPACITY = 0.20
+SNACK_OPACITY = 0.10
 def _PIZZA_SMALL(): return doodles.pizza()      # separate handle so the small-slot pizza can be sized on its own
 def snack_attack(t, P):
     ph = t / DUR; name = P.get("name"); D = doodles
