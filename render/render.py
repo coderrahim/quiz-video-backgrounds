@@ -613,18 +613,19 @@ def _frame_sprites():
         big = [D.rocket, D.trophy, D.bulb, D.puzzle, D.target, D.gear, D.plane, D.palette, D.star]
         small = [D.hexa, D.tri, D.square, D.diamond, D.zigzag, D.xcross, D.blob, D.bigring, D.ring, D.sparkle]
         pts = []; tries = 0
-        while len(pts) < 70 and tries < 20000:
+        while len(pts) < 88 and tries < 30000:
             tries += 1
             x, y = g.uniform(-30, W + 30), g.uniform(-30, H + 30)
             e = ((x - CX) / (W * 0.27)) ** 2 + ((y - CY) / (H * 0.31)) ** 2
             if e < 1.0: continue                                  # keep centre clean
             isbig = g.uniform() < 0.5
             r = 120 if isbig else 60
-            if any((x - px) ** 2 + (y - py) ** 2 < (r + pr) ** 2 * 0.62 for px, py, pr, _ in pts): continue
+            if any((x - px) ** 2 + (y - py) ** 2 < (r + pr) ** 2 * 0.55 for px, py, pr, _ in pts): continue
             pts.append((x, y, r, isbig))
-        out = []
+        out = []; nb = 0
         for i, (x, y, r, isbig) in enumerate(pts):
-            fn = big[i % len(big)] if isbig else small[int(g.integers(0, len(small)))]
+            if isbig: fn = big[nb % len(big)]; nb += 1                   # every big icon type appears
+            else: fn = small[int(g.integers(0, len(small)))]
             size = g.uniform(165, 210) if isbig else g.uniform(50, 90)
             rot = g.uniform(-25, 25)
             im = fn().rotate(rot, resample=Image.BICUBIC, expand=True)
@@ -667,7 +668,6 @@ def icon_frame(t, P):
     tw = 0.8 + 0.2 * np.sin(TAU * 2 * ph)
     img = img + (line_col - img) * (np.clip(gl * 1.2, 0, 1) * 0.18)[..., None]
     img = img + (line_col - img) * (ln * 0.80)[..., None]
-    img = img + (line_col - img) * (spray * 0.55 * tw)[..., None]
     return img
 
 DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame,

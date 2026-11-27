@@ -388,11 +388,13 @@ def target():
 
 def gear():
     im, d = _canvas(140)
-    pts = []
-    for i in range(16):
-        r = 56 if (i // 2) % 2 == 0 else 42
-        a = i / 16 * 2 * math.pi + (math.pi / 16 if i % 2 else -math.pi / 16) * 0.6
-        pts.append((70 + r * math.cos(a), 70 + r * math.sin(a)))
+    pts = []; n = 8
+    for i in range(n):
+        c = i / n * 2 * math.pi; tw = math.pi / n * 0.42
+        for ang, r in [(c - tw * 1.35, 44), (c - tw, 58), (c + tw, 58), (c + tw * 1.35, 44)]:
+            pts.append((70 + r * math.cos(ang), 70 + r * math.sin(ang)))
+        mid = c + math.pi / n
+        pts.append((70 + 44 * math.cos(mid), 70 + 44 * math.sin(mid)))
     _poly(d, pts); _el(d, [52, 52, 88, 88])
     return im
 
