@@ -673,13 +673,73 @@ def icon_frame(t, P):
     img = img + (line_col - img) * (ln * FRAME_OPACITY)[..., None]
     return img
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame,
+# ---- standard per-colour scroll directions (client table) ----
+STD_DIR = {"blue": (-1, 1),     # top-right -> bottom-left
+           "green": (1, -1),    # bottom-left -> top-right
+           "purple": (1, -1),   # bottom-left -> top-right
+           "orange": (1, 1),    # top-left -> bottom-right
+           "pink": (-1, -1)}    # bottom-right -> top-left
+
+# Icon Frame as a seamless scrolling tile (organized 6 x 4 staggered grid)
+FT_COLS, FT_ROWS, FT_DX, FT_DY = 6, 4, 200, 172
+FT_W, FT_H = FT_COLS * FT_DX, FT_ROWS * FT_DY
+_FTILE = None
+def _frame_tile():
+    global _FTILE
+    if _FTILE is None:
+        from PIL import ImageFilter
+        D = doodles; g = np.random.default_rng(16)
+        big = [D.rocket2, D.trophy2, D.bulb2, D.puzzle2, D.target, D.gear, D.plane, D.palette, D.star, D.hexa, D.dash_curve, D.bigring]
+        small = [D.tri, D.square, D.xcross, D.zigzag, D.blob, D.ring, D.diamond, D.sparkle, D.tri, D.zigzag, D.square, D.xcross]
+        tile = np.zeros((FT_H, FT_W), np.float32); nb = ns = 0
+        for r in range(FT_ROWS):
+            for c in range(FT_COLS):
+                x = c * FT_DX + (FT_DX / 2 if r % 2 else 0) + g.uniform(-10, 10)
+                y = r * FT_DY + FT_DY / 2 + g.uniform(-8, 8)
+                isbig = (c + r // 2) % 2 == 0
+                if isbig: fn = big[nb % len(big)]; nb += 1
+                else: fn = small[ns % len(small)]; ns += 1
+                size = 128 if isbig else 64
+                im = fn().rotate(g.uniform(-18, 18), resample=Image.BICUBIC, expand=True)
+                a = np.clip((np.asarray(im, np.float32) / 255 - 0.35) / 0.65, 0, 1)
+                im = Image.fromarray((a * 255).astype(np.uint8)); im = im.crop(im.getbbox())
+                sc = size / max(im.size); im = im.resize((max(1, int(im.width * sc)), max(1, int(im.height * sc))), Image.LANCZOS)
+                k = max(1, int(round(5.0 - 3.2 * 4.5 * sc)) + 1) | 1
+                if k > 1: im = im.filter(ImageFilter.MaxFilter(k))
+                a = np.asarray(im, np.float32) / 255; h, w = a.shape
+                x0, y0 = int(x - w / 2), int(y - h / 2)
+                for ox in (-FT_W, 0, FT_W):                     # wrap so the tile repeats seamlessly
+                    for oy in (-FT_H, 0, FT_H):
+                        X0, Y0 = x0 + ox, y0 + oy
+                        xa, ya, xb, yb = max(X0, 0), max(Y0, 0), min(X0 + w, FT_W), min(Y0 + h, FT_H)
+                        if xa < xb and ya < yb:
+                            tile[ya:yb, xa:xb] = np.maximum(tile[ya:yb, xa:xb], a[ya - Y0:yb - Y0, xa - X0:xb - X0])
+        nx, ny = W // FT_W + 4, H // FT_H + 4
+        mos = np.tile(tile, (ny, nx))
+        glow = np.asarray(Image.fromarray((mos * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(6)), np.float32) / 255
+        _FTILE = (Image.fromarray((mos * 255).astype(np.uint8)), Image.fromarray((glow * 255).astype(np.uint8)))
+    return _FTILE
+
+def icon_frame_scroll(t, P):
+    ph = t / DUR; name = P.get("name")
+    img = stops_radial(FRAME_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph)
+    line_col = hexc(FRAME_LINE[name]) if name in FRAME_LINE else (np.float32([1, 1, 1]) * 0.35 + P["accent"] * 0.65)
+    dx, dy = STD_DIR.get(name, (-1, 1))
+    c, f = FT_W * 1.2 - dx * FT_W * ph, FT_H * 1.05 - dy * FT_H * ph
+    mos, glow = _frame_tile()
+    ln = np.asarray(mos.transform((W, H), Image.AFFINE, (1, 0, c, 0, 1, f), resample=Image.BICUBIC), np.float32) / 255
+    gl = np.asarray(glow.transform((W, H), Image.AFFINE, (1, 0, c, 0, 1, f), resample=Image.BICUBIC), np.float32) / 255
+    img = img + (line_col - img) * (np.clip(gl * 1.2, 0, 1) * 0.18 * FRAME_OPACITY / 0.8)[..., None]
+    img = img + (line_col - img) * (ln * FRAME_OPACITY)[..., None]
+    return img
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame', 'icon-frame-float')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 
