@@ -278,8 +278,8 @@ def _hue_shift_stops(ref, h_centre, h_edge):
     return out
 
 PURPLE_REF = [(0.0, "#fc56d9"), (0.47, "#a332ad"), (0.89, "#4c0c83"), (1.0, "#380479")]
-def stops_radial(stops, ph=0.0):
-    r = np.hypot(X - CX, Y - CY) / np.hypot(CX, CY) * (1 + 0.02 * np.sin(TAU * ph))
+def stops_radial(stops, ph=0.0, yscale=1.0):
+    r = np.hypot(X - CX, (Y - CY) * yscale) / np.hypot(CX, CY * yscale) * (1 + 0.02 * np.sin(TAU * ph))
     xs = [a for a, _ in stops]; cs = [hexc(c) for _, c in stops]
     return np.stack([np.interp(r, xs, [c[i] for c in cs]) for i in range(3)], -1).astype(np.float32)
 
@@ -777,14 +777,15 @@ def scroll_tile_layer(key_tuple, ph, name):
     return ln, gl
 
 # ---------------- Design 17: Pet Pals ----------------
-PET_STOPS = {"blue": [(0.0, "#40e4fe"), (0.42, "#18b2fe"), (0.86, "#0472fc"), (1.0, "#003eea")]}
+PET_STOPS = {"blue": [(0.0, "#3de1fd"), (0.145, "#2ecefc"), (0.29, "#18b4fd"), (0.454, "#018afd"), (0.636, "#0170f8"),
+                      (0.78, "#005bf1"), (0.908, "#0047ec"), (1.0, "#003de9")]}   # measured from client reference
 PET_LINE = {"blue": "#7fe6ff"}
 PET_OPACITY = 0.32
 def pet_pals(t, P):
     ph = t / DUR; name = P.get("name"); D = doodles
     tl = build_tile("pets", [D.dog, D.cat, D.bear, D.bunny], [D.paw, D.bone, D.dot, D.paw, D.bone, D.dot],
                     big_size=150, small_size=70, rot=14, fill_icons=(D.paw, D.dot), size_scale={D.dot: 0.32, D.bone: 1.45})
-    img = stops_radial(PET_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph)
+    img = stops_radial(PET_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph, yscale=1.31 if name in PET_STOPS else 1.0)
     line_col = hexc(PET_LINE[name]) if name in PET_LINE else (np.float32([1, 1, 1]) * 0.45 + P["accent"] * 0.55)
     ln, gl = scroll_tile_layer(tl, ph, name)
     img = img + (line_col - img) * (np.clip(gl * 1.2, 0, 1) * 0.06)[..., None]
