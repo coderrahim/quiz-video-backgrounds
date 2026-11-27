@@ -809,20 +809,71 @@ def dream_home(t, P):
     img = img + (line_col - img) * (ln * HOME_OPACITY)[..., None]
     return img
 
+# ---------------- even lattice layout (equal icon size + equal spacing, like client reference) ----------------
+_LAT = {}
+def _prep_icon(fn, target, stroke, keep_fill, rot):
+    from PIL import ImageFilter
+    im = fn().rotate(rot, resample=Image.BICUBIC, expand=True)
+    a = np.asarray(im, np.float32) / 255
+    if not keep_fill: a = np.clip((a - 0.35) / 0.65, 0, 1)
+    im = Image.fromarray((a * 255).astype(np.uint8)); im = im.crop(im.getbbox())
+    w0, h0 = im.size
+    sc = target / np.sqrt(w0 * h0)                      # equal visual size (area based)
+    sc = min(sc, target * 1.35 / max(w0, h0))            # but never too long
+    im = im.resize((max(1, int(w0 * sc)), max(1, int(h0 * sc))), Image.LANCZOS)
+    k = max(1, int(round(stroke - 3.2 * 4.5 * sc)) + 1) | 1
+    if k > 1 and stroke > 0: im = im.filter(ImageFilter.MaxFilter(k))
+    return np.asarray(im, np.float32) / 255
+
+def build_lattice(key, icons, smalls, dx=220, dy=190, size=118, small_size=30, rot=10, stroke=7.0, fill=(), seed=21):
+    """Big icons on a regular grid; type = (col + row) mod n, so each diagonal shares a type and neighbours differ.
+    Smalls sit exactly at the centre of every 4 icons. Tile = n*dx by n*dy, invariant under (dx, -dy)."""
+    if key in _LAT: return _LAT[key]
+    n = len(icons); tw, th = n * dx, n * dy
+    tile = np.zeros((th, tw), np.float32); g = np.random.default_rng(seed)
+    sprites = {fn: _prep_icon(fn, size, stroke, fn in fill, 0) for fn in icons}
+    rots = [g.uniform(-rot, rot) for _ in range(n)]
+    sprites = {fn: _prep_icon(fn, size, stroke, fn in fill, rots[i]) for i, fn in enumerate(icons)}
+    small_spr = [_prep_icon(fn, small_size, 0, True, 0) for fn in smalls]
+    def put(a, x, y):
+        h, w = a.shape; x0, y0 = int(round(x - w / 2)), int(round(y - h / 2))
+        for ox in (-tw, 0, tw):
+            for oy in (-th, 0, th):
+                X0, Y0 = x0 + ox, y0 + oy
+                xa, ya, xb, yb = max(X0, 0), max(Y0, 0), min(X0 + w, tw), min(Y0 + h, th)
+                if xa < xb and ya < yb:
+                    tile[ya:yb, xa:xb] = np.maximum(tile[ya:yb, xa:xb], a[ya - Y0:yb - Y0, xa - X0:xb - X0])
+    for r in range(n):
+        for c in range(n):
+            put(sprites[icons[(c + r) % n]], c * dx + dx / 2, r * dy + dy / 2)
+            put(small_spr[(c + r) % len(small_spr)], c * dx + dx, r * dy + dy)
+    mos = np.tile(tile, (H // th + 4, W // tw + 4))
+    _LAT[key] = (Image.fromarray((mos * 255).astype(np.uint8)), tw, th, dx, dy)
+    return _LAT[key]
+
+# scroll vectors in grid steps per 21 s loop (all are symmetries of the lattice -> seamless)
+LAT_DIR = {"blue": (-2, 2),     # top-right -> bottom-left   (~28 px/s)
+           "green": (2, -2),    # bottom-left -> top-right
+           "purple": (2, -2),   # bottom-left -> top-right
+           "orange": (3, 2),    # top-left -> bottom-right   (~36 px/s)
+           "pink": (-3, -2)}    # bottom-right -> top-left
+def lattice_layer(lat, ph, name):
+    mos, tw, th, dx, dy = lat
+    sx, sy = LAT_DIR.get(name, (-2, 2))
+    c, f = tw * 1.2 - sx * dx * ph, th * 1.05 - sy * dy * ph
+    return np.asarray(mos.transform((W, H), Image.AFFINE, (1, 0, c, 0, 1, f), resample=Image.BICUBIC), np.float32) / 255
+
 # ---------------- Design 19: Snack Attack (food icons) ----------------
 SNACK_OPACITY = 0.32
 def _PIZZA_SMALL(): return doodles.pizza()      # separate handle so the small-slot pizza can be sized on its own
 def snack_attack(t, P):
     ph = t / DUR; name = P.get("name"); D = doodles
-    pizza_s = _PIZZA_SMALL
-    tl = build_tile("snack2", [D.burger, D.pizza, D.fries, D.sandwich],
-                    [D.hotdog, D.sparkle4, pizza_s, D.dot],
-                    cols=4, rows=2, big_size=135, small_size=44, rot=12, seed=19,
-                    fill_icons=(D.sparkle4, D.dot, D.burger, D.pizza, D.fries, D.hotdog, D.sandwich, pizza_s),
-                    size_scale={D.dot: 0.45, D.hotdog: 3.6, pizza_s: 2.9}, stroke=7.0, no_dilate=(D.dot, D.sparkle4))
+    lat = build_lattice("snack-lat", [D.burger, D.pizza, D.fries, D.hotdog, D.sandwich], [D.star5, D.dot],
+                        dx=220, dy=190, size=112, small_size=26, rot=10, stroke=7.0,
+                        fill=(D.burger, D.pizza, D.fries, D.hotdog, D.sandwich))
     img = stops_radial(FRAME_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph)
     line_col = np.float32([1, 1, 1]) * 0.45 + (hexc(FRAME_LINE[name]) if name in FRAME_LINE else P["accent"]) * 0.55
-    ln, gl = scroll_tile_layer(tl, ph, name)
+    ln = lattice_layer(lat, ph, name)
     return img + (line_col - img) * (ln * SNACK_OPACITY)[..., None]
 
 DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame, "pet-pals": pet_pals, "dream-home": dream_home, "snack-attack": snack_attack,

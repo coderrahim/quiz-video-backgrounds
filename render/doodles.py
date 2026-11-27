@@ -692,3 +692,13 @@ def sandwich():
     _ln(d, [(34 + i * 10, 116 + (6 if i % 2 else 0)) for i in range(10)])                 # filling edge
     _ln(d, [(44, 100), (110, 100)], w=2.4)
     return im
+
+
+def star5():
+    im, d = _canvas(100)
+    p = []
+    for i in range(10):
+        r = 42 if i % 2 == 0 else 19; a = -math.pi / 2 + i * math.pi / 5
+        p.append((50 + r * math.cos(a), 54 + r * math.sin(a)))
+    d.polygon([(x * SS, y * SS) for x, y in p], fill=255)
+    return im
