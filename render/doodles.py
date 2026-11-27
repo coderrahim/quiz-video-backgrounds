@@ -515,3 +515,69 @@ def dash_curve():
 def dot():
     im, d = _canvas(40)
     _el(d, [8, 8, 32, 32], fill=255); return im
+
+
+# ======================= Pet Pals (design 17): cute animal faces =======================
+def _face(d, cx, cy, mouth=True):
+    _el(d, [cx - 22, cy - 6, cx - 12, cy + 4], fill=255); _el(d, [cx + 12, cy - 6, cx + 22, cy + 4], fill=255)   # eyes
+    _el(d, [cx - 6, cy + 12, cx + 6, cy + 20], fill=255)                                                          # nose
+    if mouth:
+        _arcp(d, cx - 6, cy + 22, 6, 6, 0, 180); _arcp(d, cx + 6, cy + 22, 6, 6, 0, 180)
+
+def cat():
+    im, d = _canvas(160)
+    sh, ds = _canvas(160)
+    ds.ellipse([22 * SS, 40 * SS, 138 * SS, 140 * SS], fill=255)
+    ds.polygon([(30 * SS, 70 * SS), (36 * SS, 18 * SS), (70 * SS, 46 * SS)], fill=255)
+    ds.polygon([(130 * SS, 70 * SS), (124 * SS, 18 * SS), (90 * SS, 46 * SS)], fill=255)
+    a = np.asarray(_outline_shape(Image.new("L", im.size, 0), sh), np.float32); a[a < 200] = 0
+    im = Image.fromarray(a.astype(np.uint8)); d = ImageDraw.Draw(im)
+    _face(d, 80, 86)
+    for s_ in (-1, 1):
+        for k in (-1, 0, 1):
+            _ln(d, [(80 + s_ * 34, 104 + k * 7), (80 + s_ * 60, 100 + k * 12)], w=2.4)
+    return im
+
+def dog():
+    im, d = _canvas(170)
+    _el(d, [35, 30, 135, 140])
+    _poly(d, [(42, 50), (14, 70), (20, 120), (40, 110)]); _poly(d, [(128, 50), (156, 70), (150, 120), (130, 110)])
+    _face(d, 85, 82)
+    _el(d, [66, 92, 104, 124])
+    return im
+
+def bear():
+    im, d = _canvas(160)
+    sh, ds = _canvas(160)
+    ds.ellipse([22 * SS, 34 * SS, 138 * SS, 140 * SS], fill=255)
+    ds.ellipse([18 * SS, 20 * SS, 58 * SS, 60 * SS], fill=255); ds.ellipse([102 * SS, 20 * SS, 142 * SS, 60 * SS], fill=255)
+    a = np.asarray(_outline_shape(Image.new("L", im.size, 0), sh), np.float32); a[a < 200] = 0
+    im = Image.fromarray(a.astype(np.uint8)); d = ImageDraw.Draw(im)
+    _el(d, [29, 31, 47, 49]); _el(d, [113, 31, 131, 49])
+    _face(d, 80, 82); _el(d, [58, 94, 102, 130])
+    return im
+
+def bunny():
+    im, d = _canvas(170)
+    sh, ds = _canvas(170)
+    ds.ellipse([35 * SS, 70 * SS, 135 * SS, 160 * SS], fill=255)
+    ds.ellipse([46 * SS, 6 * SS, 78 * SS, 96 * SS], fill=255); ds.ellipse([92 * SS, 6 * SS, 124 * SS, 96 * SS], fill=255)
+    a = np.asarray(_outline_shape(Image.new("L", im.size, 0), sh), np.float32); a[a < 200] = 0
+    im = Image.fromarray(a.astype(np.uint8)); d = ImageDraw.Draw(im)
+    _el(d, [55, 22, 69, 74]); _el(d, [101, 22, 115, 74])
+    _face(d, 85, 112)
+    return im
+
+def paw():
+    im, d = _canvas(110)
+    _el(d, [30, 52, 80, 94], fill=255)
+    for x, y in [(22, 40), (42, 22), (68, 22), (88, 40)]: _el(d, [x - 10, y - 12, x + 10, y + 12], fill=255)
+    return im
+
+def bone():
+    im, d = _canvas(150)
+    sh, ds = _canvas(150)
+    ds.rectangle([38 * SS, 62 * SS, 112 * SS, 88 * SS], fill=255)
+    for x, y in [(30, 56), (30, 94), (120, 56), (120, 94)]: ds.ellipse([(x - 17) * SS, (y - 17) * SS, (x + 17) * SS, (y + 17) * SS], fill=255)
+    a = np.asarray(_outline_shape(Image.new("L", im.size, 0), sh), np.float32); a[a < 200] = 0
+    return Image.fromarray(a.astype(np.uint8))

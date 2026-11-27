@@ -733,13 +733,71 @@ def icon_frame_scroll(t, P):
     img = img + (line_col - img) * (ln * FRAME_OPACITY)[..., None]
     return img
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame,
+# ---------------- generic organized scrolling tile (used by Pet Pals and later designs) ----------------
+_TILES = {}
+def build_tile(key, big, small, cols=6, rows=4, dx=200, dy=172, big_size=128, small_size=64, rot=18, seed=17, fill_icons=(), size_scale=None):
+    """Staggered-grid tile; returns (mosaic, glow, tile_w, tile_h). Icons listed in fill_icons keep their solid fill."""
+    if key in _TILES: return _TILES[key]
+    from PIL import ImageFilter
+    g = np.random.default_rng(seed); tw, th = cols * dx, rows * dy
+    tile = np.zeros((th, tw), np.float32); nb = ns = 0
+    for r in range(rows):
+        for c in range(cols):
+            x = c * dx + (dx / 2 if r % 2 else 0) + g.uniform(-10, 10); y = r * dy + dy / 2 + g.uniform(-8, 8)
+            isbig = (c + r // 2) % 2 == 0
+            if isbig: fn = big[nb % len(big)]; nb += 1
+            else: fn = small[ns % len(small)]; ns += 1
+            size = (big_size if isbig else small_size) * (size_scale or {}).get(fn, 1.0)
+            im = fn().rotate(g.uniform(-rot, rot), resample=Image.BICUBIC, expand=True)
+            a = np.asarray(im, np.float32) / 255
+            if fn not in fill_icons: a = np.clip((a - 0.35) / 0.65, 0, 1)
+            im = Image.fromarray((a * 255).astype(np.uint8)); im = im.crop(im.getbbox())
+            sc = size / max(im.size); im = im.resize((max(1, int(im.width * sc)), max(1, int(im.height * sc))), Image.LANCZOS)
+            k = max(1, int(round(5.0 - 3.2 * 4.5 * sc)) + 1) | 1
+            if k > 1 and fn not in fill_icons: im = im.filter(ImageFilter.MaxFilter(k))
+            a = np.asarray(im, np.float32) / 255; h, w = a.shape
+            x0, y0 = int(x - w / 2), int(y - h / 2)
+            for ox in (-tw, 0, tw):
+                for oy in (-th, 0, th):
+                    X0, Y0 = x0 + ox, y0 + oy
+                    xa, ya, xb, yb = max(X0, 0), max(Y0, 0), min(X0 + w, tw), min(Y0 + h, th)
+                    if xa < xb and ya < yb:
+                        tile[ya:yb, xa:xb] = np.maximum(tile[ya:yb, xa:xb], a[ya - Y0:yb - Y0, xa - X0:xb - X0])
+    mos = np.tile(tile, (H // th + 4, W // tw + 4))
+    glow = np.asarray(Image.fromarray((mos * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(6)), np.float32) / 255
+    _TILES[key] = (Image.fromarray((mos * 255).astype(np.uint8)), Image.fromarray((glow * 255).astype(np.uint8)), tw, th)
+    return _TILES[key]
+
+def scroll_tile_layer(key_tuple, ph, name):
+    mos, glow, tw, th = key_tuple
+    dx, dy = STD_DIR.get(name, (-1, 1))
+    c, f = tw * 1.2 - dx * tw * ph, th * 1.05 - dy * th * ph
+    ln = np.asarray(mos.transform((W, H), Image.AFFINE, (1, 0, c, 0, 1, f), resample=Image.BICUBIC), np.float32) / 255
+    gl = np.asarray(glow.transform((W, H), Image.AFFINE, (1, 0, c, 0, 1, f), resample=Image.BICUBIC), np.float32) / 255
+    return ln, gl
+
+# ---------------- Design 17: Pet Pals ----------------
+PET_STOPS = {"blue": [(0.0, "#40e4fe"), (0.42, "#18b2fe"), (0.86, "#0472fc"), (1.0, "#003eea")]}
+PET_LINE = {"blue": "#7fe6ff"}
+PET_OPACITY = 0.32
+def pet_pals(t, P):
+    ph = t / DUR; name = P.get("name"); D = doodles
+    tl = build_tile("pets", [D.dog, D.cat, D.bear, D.bunny], [D.paw, D.bone, D.dot, D.paw, D.bone, D.dot],
+                    big_size=150, small_size=70, rot=14, fill_icons=(D.paw, D.dot), size_scale={D.dot: 0.32, D.bone: 1.45})
+    img = stops_radial(PET_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph)
+    line_col = hexc(PET_LINE[name]) if name in PET_LINE else (np.float32([1, 1, 1]) * 0.45 + P["accent"] * 0.55)
+    ln, gl = scroll_tile_layer(tl, ph, name)
+    img = img + (line_col - img) * (np.clip(gl * 1.2, 0, 1) * 0.06)[..., None]
+    img = img + (line_col - img) * (ln * PET_OPACITY)[..., None]
+    return img
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame, "pet-pals": pet_pals,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame', 'icon-frame-float')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame', 'icon-frame-float', 'pet-pals')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 
