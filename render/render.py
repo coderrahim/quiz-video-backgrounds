@@ -610,31 +610,32 @@ def _frame_sprites():
     if _FRAME is None:
         from PIL import ImageFilter
         D = doodles; g = np.random.default_rng(16)
-        big = [D.rocket, D.trophy, D.bulb, D.puzzle, D.target, D.gear, D.plane, D.palette, D.star]
-        small = [D.hexa, D.tri, D.square, D.diamond, D.zigzag, D.xcross, D.blob, D.bigring, D.ring, D.sparkle]
+        big = [D.rocket2, D.trophy2, D.bulb2, D.puzzle2, D.target, D.gear, D.plane, D.palette, D.star, D.hexa, D.dash_curve, D.bigring]
+        small = [D.tri, D.square, D.diamond, D.zigzag, D.xcross, D.blob, D.ring, D.sparkle, D.dot, D.dot, D.zigzag, D.tri]
         pts = []; tries = 0
-        while len(pts) < 88 and tries < 30000:
+        while len(pts) < 95 and tries < 30000:
             tries += 1
             x, y = g.uniform(-30, W + 30), g.uniform(-30, H + 30)
             e = ((x - CX) / (W * 0.27)) ** 2 + ((y - CY) / (H * 0.31)) ** 2
             if e < 1.0: continue                                  # keep centre clean
-            isbig = g.uniform() < 0.5
-            r = 120 if isbig else 60
+            isbig = g.uniform() < 0.45
+            r = 100 if isbig else 52
             if any((x - px) ** 2 + (y - py) ** 2 < (r + pr) ** 2 * 0.55 for px, py, pr, _ in pts): continue
             pts.append((x, y, r, isbig))
         out = []; nb = 0
         for i, (x, y, r, isbig) in enumerate(pts):
             if isbig: fn = big[nb % len(big)]; nb += 1                   # every big icon type appears
             else: fn = small[int(g.integers(0, len(small)))]
-            size = g.uniform(165, 210) if isbig else g.uniform(50, 90)
-            rot = g.uniform(-25, 25)
+            size = g.uniform(130, 175) if isbig else g.uniform(45, 95)
+            rot = g.uniform(-35, 35)
             im = fn().rotate(rot, resample=Image.BICUBIC, expand=True)
             a = np.asarray(im, np.float32) / 255; a = np.clip((a - 0.35) / 0.65, 0, 1)      # outline only, no fill
-            im = Image.fromarray((a * 255).astype(np.uint8))
+            im = Image.fromarray((a * 255).astype(np.uint8)); im = im.crop(im.getbbox())
+            if fn is D.dot: size *= 0.25
             sc = size / max(im.size); im = im.resize((max(1, int(im.width * sc)), max(1, int(im.height * sc))), Image.LANCZOS)
             stroke = 3.2 * 4.5 * sc                                    # stroke px after scaling
             k = max(1, int(round(5.0 - stroke)) + 1) | 1                # grow to ~5 px lines
-            if k > 1: im = im.filter(ImageFilter.MaxFilter(k))
+            if k > 1 and fn is not D.dot: im = im.filter(ImageFilter.MaxFilter(k))
             a = np.pad(np.asarray(im, np.float32) / 255, 16)
             glow = np.asarray(Image.fromarray((a * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(6)), np.float32) / 255
             out.append(dict(x=x, y=y, a=a, glow=glow, p=g.uniform(0, 1), k=int(g.integers(1, 3)), amp=g.uniform(6, 14) if isbig else g.uniform(4, 9)))

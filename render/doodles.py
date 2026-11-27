@@ -454,3 +454,64 @@ def dashed_path():
 def bigring():
     im, d = _canvas(120)
     _el(d, [14, 14, 106, 106]); return im
+
+
+# ---------- refined icons for Icon Frame (closer to client reference) ----------
+def trophy2():
+    im, d = _canvas(150)
+    sh, ds = _canvas(150)
+    ds.rectangle([42 * SS, 22 * SS, 108 * SS, 52 * SS], fill=255)
+    ds.pieslice([42 * SS, 8 * SS, 108 * SS, 96 * SS], 0, 180, fill=255)
+    a = np.asarray(_outline_shape(Image.new("L", im.size, 0), sh), np.float32); a[a < 200] = 0
+    im = Image.fromarray(a.astype(np.uint8)); d = ImageDraw.Draw(im)
+    _arcp(d, 42, 44, 16, 16, 90, 270); _arcp(d, 108, 44, 16, 16, -90, 90)
+    _ln(d, [(58, 34), (58, 64)]); _ln(d, [(68, 34), (68, 58)])
+    _ln(d, [(75, 96), (75, 112)]); _ln(d, [(62, 112), (88, 112)]); _rr(d, [52, 114, 98, 130], 4)
+    return im
+
+def rocket2():
+    im, d = _canvas(160)
+    sh, ds = _canvas(160)
+    ds.ellipse([55 * SS, 10 * SS, 105 * SS, 120 * SS], fill=255)
+    ds.rectangle([55 * SS, 70 * SS, 105 * SS, 112 * SS], fill=255)
+    a = np.asarray(_outline_shape(Image.new("L", im.size, 0), sh), np.float32); a[a < 200] = 0
+    im = Image.fromarray(a.astype(np.uint8)); d = ImageDraw.Draw(im)
+    _el(d, [68, 42, 92, 66]); _el(d, [75, 49, 85, 59])
+    _poly(d, [(55, 80), (35, 112), (35, 126), (55, 112)]); _poly(d, [(105, 80), (125, 112), (125, 126), (105, 112)])
+    _ln(d, [(80, 112), (80, 128)])
+    _poly(d, [(68, 114), (80, 150), (92, 114)])
+    _ln(d, [(55, 98), (105, 98)], w=2.4)
+    return im
+
+def puzzle2():
+    im, d = _canvas(150)
+    sh, ds = _canvas(150)
+    ds.rounded_rectangle([30 * SS, 40 * SS, 110 * SS, 120 * SS], radius=6 * SS, fill=255)
+    for box in [(57, 18, 83, 44), (106, 67, 132, 93)]: ds.ellipse([c * SS for c in box], fill=255)
+    for box in [(57, 106, 83, 132), (16, 67, 42, 93)]: ds.ellipse([c * SS for c in box], fill=0)
+    a = np.asarray(_outline_shape(Image.new("L", im.size, 0), sh), np.float32); a[a < 200] = 0
+    return Image.fromarray(a.astype(np.uint8))
+
+def bulb2():
+    im, d = _canvas(150)
+    sh, ds = _canvas(150)
+    ds.ellipse([35 * SS, 18 * SS, 115 * SS, 98 * SS], fill=255)
+    ds.polygon([(52 * SS, 84 * SS), (98 * SS, 84 * SS), (92 * SS, 108 * SS), (58 * SS, 108 * SS)], fill=255)
+    a = np.asarray(_outline_shape(Image.new("L", im.size, 0), sh), np.float32); a[a < 200] = 0
+    im = Image.fromarray(a.astype(np.uint8)); d = ImageDraw.Draw(im)
+    _rr(d, [58, 110, 92, 122], 4); _rr(d, [62, 124, 88, 134], 4)
+    _el(d, [64, 46, 86, 68]); _ln(d, [(70, 68), (70, 106)]); _ln(d, [(80, 68), (80, 106)])
+    _arcp(d, 75, 58, 30, 30, 200, 250, w=2.4)
+    for a_ in (-150, -120, -60, -30):
+        c = math.radians(a_); _ln(d, [(75 + 50 * math.cos(c), 58 + 50 * math.sin(c)), (75 + 62 * math.cos(c), 58 + 62 * math.sin(c))])
+    return im
+
+def dash_curve():
+    im, d = _canvas(160)
+    pts = [(40 + 60 * math.sin(t * math.pi) , 10 + 140 * t) for t in [i / 80 for i in range(81)]]
+    for i in range(0, 80, 8): _ln(d, pts[i:i + 4])
+    return im
+
+def dot():
+    im, d = _canvas(40)
+    _el(d, [8, 8, 32, 32], fill=255); return im
