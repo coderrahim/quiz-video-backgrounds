@@ -18,5 +18,6 @@ Sample renders of the quiz video backgrounds: 1920×1080, 30 fps, exactly 21 s, 
 | QB19 | Snack Attack | blue ↖, green ↘, purple ↙, orange ↗, pink ↑ (10% opacity, even spacing) + still |
 | QB20 | Sound Wave | blue ↘, green ↑, purple ↖, orange ↙, pink ↗ (12% opacity, even spacing) + still |
 | QB21 | World Explorer | blue ↗, green ↙, purple ↓, orange ↖, pink ↘ (12% opacity, even spacing) + still |
+| QB22 | Science Lab | blue ↑, green ↘, purple ↗, orange ↓, pink ↙ (12% opacity, even spacing) + still |
 
 Rendered with `render/render.py` on the `main` branch.
