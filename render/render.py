@@ -898,13 +898,29 @@ def sound_wave(t, P):
     ln = lattice_layer(lat, ph, name, SOUND_DIR)
     return img + (line_col - img) * (ln * SOUND_OPACITY)[..., None]
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame, "pet-pals": pet_pals, "dream-home": dream_home, "snack-attack": snack_attack, "sound-wave": sound_wave,
+# ---------------- Design 21: World Explorer (travel & geography, even lattice) ----------------
+WORLD_OPACITY = 0.12
+WORLD_DIR = {"blue": (2, -2),     # ↗ bottom-left -> top-right
+             "green": (-2, 2),    # ↙ top-right -> bottom-left
+             "purple": (0, 5),    # ↓ top -> bottom
+             "orange": (-3, -2),  # ↖ bottom-right -> top-left
+             "pink": (3, 2)}      # ↘ top-left -> bottom-right
+def world_explorer(t, P):
+    ph = t / DUR; name = P.get("name"); D = doodles
+    icons = [D.globe, D.airplane, D.compass, D.pin, D.suitcase]
+    lat = build_lattice("world-lat", icons, [D.star5, D.dot], dx=220, dy=190, size=112, small_size=26, rot=10, stroke=7.0, fill=tuple(icons))
+    img = stops_radial(FRAME_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph)
+    line_col = np.float32([1, 1, 1]) * 0.45 + (hexc(FRAME_LINE[name]) if name in FRAME_LINE else P["accent"]) * 0.55
+    ln = lattice_layer(lat, ph, name, WORLD_DIR)
+    return img + (line_col - img) * (ln * WORLD_OPACITY)[..., None]
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame, "pet-pals": pet_pals, "dream-home": dream_home, "snack-attack": snack_attack, "sound-wave": sound_wave, "world-explorer": world_explorer,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame', 'icon-frame-float', 'pet-pals', 'dream-home', 'snack-attack', 'sound-wave')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame', 'icon-frame-float', 'pet-pals', 'dream-home', 'snack-attack', 'sound-wave', 'world-explorer')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 

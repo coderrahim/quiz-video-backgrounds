@@ -748,3 +748,51 @@ def vinyl():
     _el(d, [56, 56, 104, 104], fill=F); _el(d, [75, 75, 85, 85], fill=255)
     _arcp(d, 80, 80, 50, 50, 200, 250, w=2.4); _arcp(d, 80, 80, 38, 38, 20, 70, w=2.4)
     return im
+
+
+# ======================= World Explorer (design 21): travel & geography =======================
+def globe():
+    im, d = _canvas(160)
+    _el(d, [20, 20, 140, 140])
+    _arcp(d, 80, 80, 28, 60, -90, 90); _arcp(d, 80, 80, 28, 60, 90, 270)
+    _ln(d, [(80, 20), (80, 140)])
+    _ln(d, [(22, 80), (138, 80)])
+    _arcp(d, 80, 20, 56, 30, 30, 150, w=2.4); _arcp(d, 80, 140, 56, 30, 210, 330, w=2.4)
+    return im
+
+def airplane():
+    im, d = _canvas(160)
+    pts = [(80, 10), (88, 22), (88, 62), (148, 92), (148, 104), (88, 88), (86, 124), (106, 138), (106, 148),
+           (80, 142), (54, 148), (54, 138), (74, 124), (72, 88), (12, 104), (12, 92), (72, 62), (72, 22)]
+    _poly(d, pts, fill=F)
+    return im
+
+def compass():
+    im, d = _canvas(160)
+    _el(d, [18, 18, 142, 142]); _el(d, [30, 30, 130, 130], w=2.4)
+    _poly(d, [(80, 38), (94, 80), (80, 122), (66, 80)])
+    sh, ds = _canvas(160)
+    ds.polygon([(80 * SS, 38 * SS), (94 * SS, 80 * SS), (66 * SS, 80 * SS)], fill=255)
+    a = np.maximum(np.asarray(im, np.float32), np.asarray(sh, np.float32) * 0.6)
+    im = Image.fromarray(a.astype(np.uint8)); d = ImageDraw.Draw(im)
+    _el(d, [75, 75, 85, 85], fill=255)
+    for ang in (0, 90, 180, 270):
+        c = math.radians(ang); _ln(d, [(80 + 52 * math.cos(c), 80 + 52 * math.sin(c)), (80 + 60 * math.cos(c), 80 + 60 * math.sin(c))])
+    return im
+
+def pin():
+    im, d = _canvas(150)
+    sh, ds = _canvas(150)
+    ds.ellipse([33 * SS, 12 * SS, 117 * SS, 96 * SS], fill=255)
+    ds.polygon([(38 * SS, 72 * SS), (112 * SS, 72 * SS), (75 * SS, 140 * SS)], fill=255)
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    _el(d, [60, 39, 90, 69])
+    return im
+
+def suitcase():
+    im, d = _canvas(160)
+    _rr(d, [20, 46, 140, 136], 12, fill=F)
+    _rr(d, [58, 22, 102, 46], 8)
+    _ln(d, [(50, 46), (50, 136)]); _ln(d, [(110, 46), (110, 136)])
+    _el(d, [34, 136, 46, 148]); _el(d, [114, 136, 126, 148])
+    return im
