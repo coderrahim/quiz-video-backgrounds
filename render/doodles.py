@@ -363,3 +363,92 @@ QUIZPOP_LAYOUT = [
     (ring, 170, 140, 0), (ring, 480, 330, 0), (ring, 30, 300, 0), (sparkle, 330, 320, 0), (sparkle, 620, 300, 0),
     (dots, 340, 130, 0), (burst, 30, 480, 30), (ring, 380, 500, 0), (sparkle, 200, 480, 0),
 ]
+
+
+# ======================= Icon Frame (design 16) extra icons =======================
+def rocket():
+    im, d = _canvas(150)
+    sh, ds = _canvas(150)
+    body = [(75, 10), (98, 40), (100, 100), (50, 100), (52, 40)]
+    ds.polygon([(x * SS, y * SS) for x, y in body], fill=255)
+    ds.ellipse([50 * SS, 10 * SS, 100 * SS, 70 * SS], fill=255)
+    im2 = _outline_shape(Image.new("L", im.size, 0), sh); a = np.asarray(im2, np.float32); a[a < 200] = 0
+    im = Image.fromarray(a.astype(np.uint8)); d = ImageDraw.Draw(im)
+    _el(d, [64, 46, 86, 68])
+    _poly(d, [(52, 72), (32, 104), (52, 98)]); _poly(d, [(98, 72), (118, 104), (98, 98)])
+    _ln(d, [(66, 108), (62, 128)]); _ln(d, [(75, 108), (75, 136)]); _ln(d, [(84, 108), (88, 128)])
+    return im
+
+def target():
+    im, d = _canvas(150)
+    for r in (56, 38, 20): _el(d, [70 - r, 80 - r, 70 + r, 80 + r])
+    _el(d, [66, 76, 74, 84], fill=255)
+    _ln(d, [(70, 80), (128, 22)]); _ln(d, [(116, 22), (128, 22), (128, 34)]); _ln(d, [(112, 16), (122, 28)])
+    return im
+
+def gear():
+    im, d = _canvas(140)
+    pts = []
+    for i in range(16):
+        r = 56 if (i // 2) % 2 == 0 else 42
+        a = i / 16 * 2 * math.pi + (math.pi / 16 if i % 2 else -math.pi / 16) * 0.6
+        pts.append((70 + r * math.cos(a), 70 + r * math.sin(a)))
+    _poly(d, pts); _el(d, [52, 52, 88, 88])
+    return im
+
+def plane():
+    im, d = _canvas(150)
+    _poly(d, [(14, 70), (136, 20), (96, 128), (74, 88)])
+    _ln(d, [(74, 88), (136, 20)]); _ln(d, [(74, 88), (70, 118), (84, 100)])
+    return im
+
+def palette():
+    im, d = _canvas(150)
+    sh, ds = _canvas(150)
+    ds.ellipse([15 * SS, 25 * SS, 135 * SS, 125 * SS], fill=255)
+    ds.ellipse([86 * SS, 78 * SS, 112 * SS, 104 * SS], fill=0)
+    im2 = _outline_shape(Image.new("L", im.size, 0), sh); a = np.asarray(im2, np.float32); a[a < 200] = 0
+    im = Image.fromarray(a.astype(np.uint8)); d = ImageDraw.Draw(im)
+    for x, y in [(45, 70), (62, 48), (90, 48), (48, 98)]: _el(d, [x - 9, y - 9, x + 9, y + 9])
+    return im
+
+def hexa():
+    im, d = _canvas(120)
+    _poly(d, [(60 + 46 * math.cos(math.radians(a)), 60 + 46 * math.sin(math.radians(a))) for a in range(0, 360, 60)]); return im
+
+def tri():
+    im, d = _canvas(110)
+    _poly(d, [(55, 14), (98, 90), (12, 90)]); return im
+
+def square():
+    im, d = _canvas(110)
+    _rr(d, [20, 20, 90, 90], 6); return im
+
+def diamond():
+    im, d = _canvas(110)
+    _poly(d, [(55, 10), (100, 55), (55, 100), (10, 55)]); return im
+
+def zigzag():
+    im, d = _canvas(130)
+    _ln(d, [(10 + i * 18, 70 + (-16 if i % 2 else 16)) for i in range(7)]); return im
+
+def xcross():
+    im, d = _canvas(80)
+    _ln(d, [(22, 22), (58, 58)]); _ln(d, [(58, 22), (22, 58)]); return im
+
+def blob():
+    im, d = _canvas(120)
+    pts = [(60 + (40 + 6 * math.cos(4 * a)) * math.cos(a), 60 + (40 + 6 * math.cos(4 * a)) * math.sin(a)) for a in [i / 40 * 2 * math.pi for i in range(40)]]
+    _poly(d, pts); return im
+
+def dashed_path():
+    im, d = _canvas(160)
+    pts = []
+    for i in range(61):
+        t = i / 60; pts.append((20 + 120 * t, 140 - 120 * t + 50 * math.sin(t * math.pi)))
+    for i in range(0, 60, 6): _ln(d, pts[i:i + 3])
+    return im
+
+def bigring():
+    im, d = _canvas(120)
+    _el(d, [14, 14, 106, 106]); return im

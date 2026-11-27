@@ -600,13 +600,83 @@ def diagonal_slash(t, P):
     img = img + (white - img) * (sw * 0.18)[..., None]
     return img
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash,
+# ---------------- Design 16: Icon Frame (outline icons framing a clean centre) ----------------
+FRAME_STOPS = {"blue": [(0.0, "#0a7dff"), (0.45, "#0055e6"), (0.85, "#0019bc"), (1.0, "#02029a")]}
+FRAME_LINE = {"blue": "#2eb6ff"}
+_FRAME = None
+def _frame_sprites():
+    """Poisson-style scatter of outline icons everywhere except an elliptical clean centre."""
+    global _FRAME
+    if _FRAME is None:
+        from PIL import ImageFilter
+        D = doodles; g = np.random.default_rng(16)
+        big = [D.rocket, D.trophy, D.bulb, D.puzzle, D.target, D.gear, D.plane, D.palette, D.star]
+        small = [D.hexa, D.tri, D.square, D.diamond, D.zigzag, D.xcross, D.blob, D.bigring, D.ring, D.sparkle]
+        pts = []; tries = 0
+        while len(pts) < 70 and tries < 20000:
+            tries += 1
+            x, y = g.uniform(-30, W + 30), g.uniform(-30, H + 30)
+            e = ((x - CX) / (W * 0.27)) ** 2 + ((y - CY) / (H * 0.31)) ** 2
+            if e < 1.0: continue                                  # keep centre clean
+            isbig = g.uniform() < 0.5
+            r = 120 if isbig else 60
+            if any((x - px) ** 2 + (y - py) ** 2 < (r + pr) ** 2 * 0.62 for px, py, pr, _ in pts): continue
+            pts.append((x, y, r, isbig))
+        out = []
+        for i, (x, y, r, isbig) in enumerate(pts):
+            fn = big[i % len(big)] if isbig else small[int(g.integers(0, len(small)))]
+            size = g.uniform(165, 210) if isbig else g.uniform(50, 90)
+            rot = g.uniform(-25, 25)
+            im = fn().rotate(rot, resample=Image.BICUBIC, expand=True)
+            a = np.asarray(im, np.float32) / 255; a = np.clip((a - 0.35) / 0.65, 0, 1)      # outline only, no fill
+            im = Image.fromarray((a * 255).astype(np.uint8))
+            sc = size / max(im.size); im = im.resize((max(1, int(im.width * sc)), max(1, int(im.height * sc))), Image.LANCZOS)
+            stroke = 3.2 * 4.5 * sc                                    # stroke px after scaling
+            k = max(1, int(round(5.0 - stroke)) + 1) | 1                # grow to ~5 px lines
+            if k > 1: im = im.filter(ImageFilter.MaxFilter(k))
+            a = np.pad(np.asarray(im, np.float32) / 255, 16)
+            glow = np.asarray(Image.fromarray((a * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(6)), np.float32) / 255
+            out.append(dict(x=x, y=y, a=a, glow=glow, p=g.uniform(0, 1), k=int(g.integers(1, 3)), amp=g.uniform(6, 14) if isbig else g.uniform(4, 9)))
+        # halftone dot sprays in corners
+        spray = np.zeros((H, W), np.float32)
+        for cx_, cy_ in [(60, 90), (40, 600), (1880, 860), (1100, 30)]:
+            for _ in range(120):
+                rr = abs(g.normal(0, 85)); th = g.uniform(0, TAU); x, y = cx_ + rr * np.cos(th), cy_ + rr * np.sin(th) * 0.8
+                rad = max(1.2, 6.5 - rr / 22)
+                x0, x1, y0, y1 = int(max(x - 8, 0)), int(min(x + 8, W)), int(max(y - 8, 0)), int(min(y + 8, H))
+                if x0 < x1 and y0 < y1:
+                    dd = np.hypot(X[y0:y1, x0:x1] - x, Y[y0:y1, x0:x1] - y)
+                    spray[y0:y1, x0:x1] = np.maximum(spray[y0:y1, x0:x1], smooth(rad, rad - 1.2, dd))
+        _FRAME = (out, spray)
+    return _FRAME
+
+def icon_frame(t, P):
+    ph = t / DUR; name = P.get("name")
+    img = stops_radial(FRAME_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph)
+    line_col = hexc(FRAME_LINE[name]) if name in FRAME_LINE else (np.float32([1, 1, 1]) * 0.35 + P["accent"] * 0.65)
+    sprites, spray = _frame_sprites()
+    ln = np.zeros((H, W), np.float32); gl = np.zeros((H, W), np.float32)
+    for q in sprites:
+        ox = q["amp"] * 0.7 * np.cos(TAU * (q["k"] * ph + q["p"])); oy = q["amp"] * np.sin(TAU * (q["k"] * ph + q["p"]))
+        a, g_ = q["a"], q["glow"]; h, w = a.shape
+        x0, y0 = int(round(q["x"] + ox - w / 2)), int(round(q["y"] + oy - h / 2))
+        xa, ya, xb, yb = max(x0, 0), max(y0, 0), min(x0 + w, W), min(y0 + h, H)
+        if xa >= xb or ya >= yb: continue
+        ln[ya:yb, xa:xb] = np.maximum(ln[ya:yb, xa:xb], a[ya - y0:yb - y0, xa - x0:xb - x0])
+        gl[ya:yb, xa:xb] = np.maximum(gl[ya:yb, xa:xb], g_[ya - y0:yb - y0, xa - x0:xb - x0])
+    tw = 0.8 + 0.2 * np.sin(TAU * 2 * ph)
+    img = img + (line_col - img) * (np.clip(gl * 1.2, 0, 1) * 0.18)[..., None]
+    img = img + (line_col - img) * (ln * 0.80)[..., None]
+    img = img + (line_col - img) * (spray * 0.55 * tw)[..., None]
+    return img
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 
