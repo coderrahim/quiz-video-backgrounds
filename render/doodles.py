@@ -581,3 +581,64 @@ def bone():
     for x, y in [(30, 56), (30, 94), (120, 56), (120, 94)]: ds.ellipse([(x - 17) * SS, (y - 17) * SS, (x + 17) * SS, (y + 17) * SS], fill=255)
     a = np.asarray(_outline_shape(Image.new("L", im.size, 0), sh), np.float32); a[a < 200] = 0
     return Image.fromarray(a.astype(np.uint8))
+
+
+# ======================= Dream Home (design 18) =======================
+def house():
+    im, d = _canvas(160)
+    _poly(d, [(80, 18), (140, 72), (128, 72), (128, 140), (32, 140), (32, 72), (20, 72)])
+    _ln(d, [(108, 38), (108, 22), (120, 22), (120, 50)])
+    _rr(d, [46, 86, 76, 116], 3); _ln(d, [(61, 86), (61, 116)]); _ln(d, [(46, 101), (76, 101)])
+    sh, ds = _canvas(160)
+    ds.rectangle([88 * SS, 100 * SS, 114 * SS, 140 * SS], fill=255); ds.ellipse([88 * SS, 87 * SS, 114 * SS, 113 * SS], fill=255)
+    return _outline_shape(im, sh)
+
+def armchair():
+    im, d = _canvas(170)
+    sh, ds = _canvas(170)
+    ds.rounded_rectangle([40 * SS, 30 * SS, 130 * SS, 100 * SS], radius=22 * SS, fill=255)
+    ds.rounded_rectangle([14 * SS, 66 * SS, 52 * SS, 128 * SS], radius=18 * SS, fill=255)
+    ds.rounded_rectangle([118 * SS, 66 * SS, 156 * SS, 128 * SS], radius=18 * SS, fill=255)
+    ds.rounded_rectangle([40 * SS, 90 * SS, 130 * SS, 128 * SS], radius=8 * SS, fill=255)
+    im = _outline_shape(im, sh); d = ImageDraw.Draw(im)
+    _ln(d, [(52, 96), (118, 96)])
+    _ln(d, [(30, 128), (30, 140)]); _ln(d, [(140, 128), (140, 140)])
+    return im
+
+def picture(hanging=False):
+    im, d = _canvas(160)
+    top = 46 if hanging else 30
+    _rr(d, [20, top, 140, top + 90], 6)
+    _poly(d, [(32, top + 78), (62, top + 44), (82, top + 64), (100, top + 46), (128, top + 78)])
+    _el(d, [96, top + 14, 114, top + 32])
+    if hanging:
+        _ln(d, [(36, top), (80, 16), (124, top)]); _el(d, [75, 11, 85, 21], fill=255)
+    return im
+
+def picture_hang():
+    return picture(True)
+
+def plant():
+    im, d = _canvas(150)
+    _poly(d, [(48, 92), (102, 92), (94, 138), (56, 138)], fill=F); _ln(d, [(44, 92), (106, 92)])
+    _ln(d, [(75, 92), (75, 44)])
+    for sx, ang in [(-1, 0), (1, 0)]:
+        _poly(d, [(75, 72), (75 + sx * 22, 58), (75 + sx * 40, 34), (75 + sx * 18, 44)])
+    _poly(d, [(75, 46), (64, 24), (75, 6), (86, 24)])
+    return im
+
+def lamp():
+    im, d = _canvas(150)
+    _poly(d, [(50, 18), (100, 18), (116, 64), (34, 64)], fill=255)
+    _ln(d, [(75, 64), (75, 126)], w=LW * 1.4)
+    _rr(d, [50, 124, 100, 136], 6, fill=255)
+    return im
+
+def sparkle4():
+    im, d = _canvas(90)
+    p = []
+    for i in range(8):
+        r = 40 if i % 2 == 0 else 9; a = i * math.pi / 4 - math.pi / 2
+        p.append((45 + r * math.cos(a), 45 + r * math.sin(a)))
+    d.polygon([(x * SS, y * SS) for x, y in p], fill=255)
+    return im

@@ -735,7 +735,7 @@ def icon_frame_scroll(t, P):
 
 # ---------------- generic organized scrolling tile (used by Pet Pals and later designs) ----------------
 _TILES = {}
-def build_tile(key, big, small, cols=6, rows=4, dx=200, dy=172, big_size=128, small_size=64, rot=18, seed=17, fill_icons=(), size_scale=None):
+def build_tile(key, big, small, cols=6, rows=4, dx=200, dy=172, big_size=128, small_size=64, rot=18, seed=17, fill_icons=(), size_scale=None, stroke=5.0, no_dilate=()):
     """Staggered-grid tile; returns (mosaic, glow, tile_w, tile_h). Icons listed in fill_icons keep their solid fill."""
     if key in _TILES: return _TILES[key]
     from PIL import ImageFilter
@@ -753,8 +753,9 @@ def build_tile(key, big, small, cols=6, rows=4, dx=200, dy=172, big_size=128, sm
             if fn not in fill_icons: a = np.clip((a - 0.35) / 0.65, 0, 1)
             im = Image.fromarray((a * 255).astype(np.uint8)); im = im.crop(im.getbbox())
             sc = size / max(im.size); im = im.resize((max(1, int(im.width * sc)), max(1, int(im.height * sc))), Image.LANCZOS)
-            k = max(1, int(round(5.0 - 3.2 * 4.5 * sc)) + 1) | 1
-            if k > 1 and fn not in fill_icons: im = im.filter(ImageFilter.MaxFilter(k))
+            k = max(1, int(round(stroke - 3.2 * 4.5 * sc)) + 1) | 1
+            dil_skip = no_dilate if no_dilate else fill_icons
+            if k > 1 and fn not in dil_skip: im = im.filter(ImageFilter.MaxFilter(k))
             a = np.asarray(im, np.float32) / 255; h, w = a.shape
             x0, y0 = int(x - w / 2), int(y - h / 2)
             for ox in (-tw, 0, tw):
@@ -792,13 +793,28 @@ def pet_pals(t, P):
     img = img + (line_col - img) * (ln * PET_OPACITY)[..., None]
     return img
 
-DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame, "pet-pals": pet_pals,
+# ---------------- Design 18: Dream Home ----------------
+HOME_OPACITY = 0.32
+def dream_home(t, P):
+    ph = t / DUR; name = P.get("name"); D = doodles
+    tl = build_tile("home", [D.house, D.armchair, D.picture_hang, D.lamp, D.house, D.plant, D.picture, D.armchair, D.lamp, D.plant, D.house, D.picture],
+                    [D.sparkle4, D.dot, D.sparkle4, D.dot, D.dot, D.sparkle4],
+                    big_size=135, small_size=46, rot=0, seed=18,
+                    fill_icons=(D.lamp, D.sparkle4, D.dot, D.armchair, D.house),
+                    size_scale={D.dot: 0.4, D.lamp: 1.0}, stroke=7.0, no_dilate=(D.dot, D.sparkle4, D.lamp))
+    img = stops_radial(FRAME_STOPS.get(name, QUIZ_STOPS.get(name, DOODLE_STOPS.get(name, PURPLE_REF))), ph)
+    line_col = np.float32([1, 1, 1]) * 0.45 + (hexc(FRAME_LINE[name]) if name in FRAME_LINE else P["accent"]) * 0.55
+    ln, gl = scroll_tile_layer(tl, ph, name)
+    img = img + (line_col - img) * (ln * HOME_OPACITY)[..., None]
+    return img
+
+DESIGNS = {"hex-pulse": hex_pulse, "radar-rings": radar_rings, "geo-tiles": geo_tiles, "doodle-play": doodle_play, "quiz-doodles": quiz_doodles, "spotlight-stage": spotlight_stage, "neon-arena": neon_arena, "quiz-pop": quiz_pop, "diagonal-slash": diagonal_slash, "icon-frame": icon_frame_scroll, "icon-frame-float": icon_frame, "pet-pals": pet_pals, "dream-home": dream_home,
            "bokeh-sparkle": lambda t, P: bokeh_sparkle(t, P, canva_radial(P["c0"], P["c1"]) if "c0" in P else backdrop(P))}
 
 def frame(design, color, t):
     P = pal(color)
     img = DESIGNS[design](t, P)
-    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame', 'icon-frame-float', 'pet-pals')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
+    vig = 1 if ('stops' in P or design in ('doodle-play', 'quiz-doodles', 'spotlight-stage', 'neon-arena', 'quiz-pop', 'diagonal-slash', 'icon-frame', 'icon-frame-float', 'pet-pals', 'dream-home')) else 1 - 0.28 * smooth(0.55, 1.15, np.hypot((X - CX) / (W / 2), (Y - CY) / (H / 2)))[..., None]
     img = np.clip(img * vig + GRAIN, 0, 1)
     return (img * 255 + 0.5).astype(np.uint8)
 
