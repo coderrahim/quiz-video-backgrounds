@@ -15,5 +15,6 @@ Sample renders of the quiz video backgrounds: 1920×1080, 30 fps, exactly 21 s, 
 | QB16 | Icon Frame | blue ↙, green ↗, purple ↗, orange ↘, pink ↖ + still |
 | QB17 | Pet Pals | blue ↙, green ↗, purple ↗, orange ↘, pink ↖ + still |
 | QB18 | Dream Home | blue ↙, green ↗, purple ↗, orange ↘, pink ↖ (slower scroll) + still |
+| QB19 | Snack Attack | blue ↙ (10% opacity, even spacing) + still |
 
 Rendered with `render/render.py` on the `main` branch.
