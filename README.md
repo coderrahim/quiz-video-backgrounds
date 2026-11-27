@@ -12,6 +12,6 @@ Sample renders of the quiz video backgrounds: 1920×1080, 30 fps, exactly 21 s, 
 | QB01 | Neon Arena | purple still (with neon quiz icons) |
 | QB15 | Quiz Pop | blue ↙, green ↗, purple ↗, orange ↘, pink ↖ + still |
 | QB04 | Diagonal Slash | orange still |
-| QB16 | Icon Frame | blue ↙ (organized, low opacity) + still |
+| QB16 | Icon Frame | blue ↙, green ↗, purple ↗, orange ↘, pink ↖ + still |
 
 Rendered with `render/render.py` on the `main` branch.
