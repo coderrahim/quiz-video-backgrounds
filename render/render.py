@@ -603,7 +603,7 @@ def diagonal_slash(t, P):
 # ---------------- Design 16: Icon Frame (outline icons framing a clean centre) ----------------
 FRAME_STOPS = {"blue": [(0.0, "#0a7dff"), (0.45, "#0055e6"), (0.85, "#0019bc"), (1.0, "#02029a")]}
 FRAME_LINE = {"blue": "#2eb6ff"}
-FRAME_CLEAR, FRAME_COUNT, FRAME_OPACITY = 0.0, 135, 0.45
+FRAME_CLEAR, FRAME_COUNT, FRAME_OPACITY = 0.0, 135, 0.28
 _FRAME = None
 def _frame_sprites():
     """Poisson-style scatter of outline icons everywhere except an elliptical clean centre."""
