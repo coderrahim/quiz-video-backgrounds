@@ -613,22 +613,23 @@ def _frame_sprites():
         D = doodles; g = np.random.default_rng(16)
         big = [D.rocket2, D.trophy2, D.bulb2, D.puzzle2, D.target, D.gear, D.plane, D.palette, D.star, D.hexa, D.dash_curve, D.bigring]
         small = [D.tri, D.square, D.diamond, D.zigzag, D.xcross, D.blob, D.ring, D.sparkle, D.dot, D.dot, D.zigzag, D.tri]
-        pts = []; tries = 0
-        while len(pts) < FRAME_COUNT and tries < 40000:
-            tries += 1
-            x, y = g.uniform(-30, W + 30), g.uniform(-30, H + 30)
-            e = ((x - CX) / (W * 0.27)) ** 2 + ((y - CY) / (H * 0.31)) ** 2
-            if e < FRAME_CLEAR: continue                          # 0 = elements everywhere (client request)
-            isbig = g.uniform() < 0.45
-            r = 100 if isbig else 52
-            if any((x - px) ** 2 + (y - py) ** 2 < (r + pr) ** 2 * 0.55 for px, py, pr, _ in pts): continue
-            pts.append((x, y, r, isbig))
+        # organized layout: staggered grid, big icons and small shapes alternate like a checkerboard
+        pts = []
+        dx_, dy_ = 200, 172
+        rows = int(H / dy_) + 2; cols = int(W / dx_) + 2
+        for r in range(rows):
+            for c in range(cols):
+                x = c * dx_ + (dx_ / 2 if r % 2 else 0) + 30 + g.uniform(-10, 10)
+                y = r * dy_ + 40 + g.uniform(-8, 8)
+                if x > W + 60 or y > H + 60: continue
+                isbig = (c + r // 2) % 2 == 0
+                pts.append((x, y, 0, isbig))
         out = []; nb = 0
         for i, (x, y, r, isbig) in enumerate(pts):
             if isbig: fn = big[nb % len(big)]; nb += 1                   # every big icon type appears
-            else: fn = small[int(g.integers(0, len(small)))]
-            size = g.uniform(130, 175) if isbig else g.uniform(45, 95)
-            rot = g.uniform(-35, 35)
+            else: fn = small[(i * 7) % len(small)]
+            size = 128 if isbig else 64
+            rot = g.uniform(-18, 18)
             im = fn().rotate(rot, resample=Image.BICUBIC, expand=True)
             a = np.asarray(im, np.float32) / 255; a = np.clip((a - 0.35) / 0.65, 0, 1)      # outline only, no fill
             im = Image.fromarray((a * 255).astype(np.uint8)); im = im.crop(im.getbbox())
